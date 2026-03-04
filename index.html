@@ -6,8 +6,8 @@
   <meta name="theme-color" content="#0d0d14" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Yapilacaklar" />
-  <title>Yapilacaklar</title>
+  <meta name="apple-mobile-web-app-title" content="Yapılacaklar" />
+  <title>Yapılacaklar</title>
   <link rel="manifest" href="manifest.json" />
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -26,43 +26,43 @@
 const STORAGE_KEY = "gunluk-plan-stable";
 const RECURRENCE_OPTIONS = [
   { value: "tek-seferlik", label: "Tek Seferlik" },
-  { value: "gunluk", label: "Gunluk" },
-  { value: "haftalik", label: "Haftalik" },
-  { value: "aylik", label: "Aylik" },
+  { value: "gunluk", label: "Günlük" },
+  { value: "haftalik", label: "Haftalık" },
+  { value: "aylik", label: "Aylık" },
 ];
-const WEEKDAYS = ["Pazartesi","Sali","Carsamba","Persembe","Cuma","Cumartesi","Pazar"];
+const WEEKDAYS = ["Pazartesi","Salı","Çarşamba","Perşembe","Cuma","Cumartesi","Pazar"];
 const PRIORITIES = ["yuksek", "orta", "dusuk"];
-const priorityLabel = { yuksek: "yüksek", orta: "orta", dusuk: "düşük" };
+const priorityLabel = { yuksek: "Yüksek", orta: "Orta", dusuk: "Düşük" };
 const priorityColor = { yuksek: "#ef4444", orta: "#f59e0b", dusuk: "#3b82f6" };
 const priorityBg = { yuksek: "rgba(239,68,68,0.12)", orta: "rgba(245,158,11,0.12)", dusuk: "rgba(59,130,246,0.12)" };
 const recurrenceColor = { "tek-seferlik": "#64748b", "gunluk": "#818cf8", "haftalik": "#34d399", "aylik": "#f472b6" };
 const statusConfig = {
   bekliyor: { label: "Bekliyor", color: "#94a3b8", bg: "rgba(148,163,184,0.12)" },
   devamediyor: { label: "Devam Ediyor", color: "#f59e0b", bg: "rgba(245,158,11,0.12)" },
-  tamamlandi: { label: "Tamamlandi", color: "#22c55e", bg: "rgba(34,197,94,0.12)" },
+  tamamlandi: { label: "Tamamlandı", color: "#22c55e", bg: "rgba(34,197,94,0.12)" },
 };
 
-const DEFAULT_CATEGORIES = ["Biyomedikal", "Kosu Koclugu", "Kisisel"];
+const DEFAULT_CATEGORIES = ["Biyomedikal", "Koşu Koçluğu", "Kişisel"];
 
 const initialTasks = [
-  { id: 1, category: "Biyomedikal", emoji: "🏥", title: "MR Cihazi - Firma Esligi", detail: "Ogleden once firma gelecek, ariza tespitine eslik et.", priority: "yuksek", time: "bugun", status: "bekliyor", note: "", recurrence: "tek-seferlik", recurrenceDay: null, subtasks: [], startedAt: null },
-  { id: 2, category: "Biyomedikal", emoji: "🏥", title: "BT Arizasi - Firma Bildirimi", detail: "Bilgisayarli tomografi arizasini ilgili firmaya bildir.", priority: "yuksek", time: "bugun", status: "bekliyor", note: "", recurrence: "tek-seferlik", recurrenceDay: null, subtasks: [], startedAt: null },
+  { id: 1, category: "Biyomedikal", emoji: "🏥", title: "MR Cihazı - Firma Eşliği", detail: "Öğleden önce firma gelecek, arıza tespitine eşlik et.", priority: "yuksek", time: "bugun", status: "bekliyor", note: "", recurrence: "tek-seferlik", recurrenceDay: null, subtasks: [], startedAt: null },
+  { id: 2, category: "Biyomedikal", emoji: "🏥", title: "BT Arızası - Firma Bildirimi", detail: "Bilgisayarlı tomografi arızasını ilgili firmaya bildir.", priority: "yuksek", time: "bugun", status: "bekliyor", note: "", recurrence: "tek-seferlik", recurrenceDay: null, subtasks: [], startedAt: null },
   { id: 6, category: "Biyomedikal", emoji: "📋", title: "Bildirim Paneli - Cihaz Durumu Bilgisi", detail: "Biyomedikal bildirim paneline cihaz durumu bilgisi ekle.", priority: "orta", time: "bugun", status: "bekliyor", note: "", recurrence: "tek-seferlik", recurrenceDay: null, subtasks: [], startedAt: null },
-  { id: 7, category: "Biyomedikal", emoji: "🤝", title: "GE - Gama Kamera Tasima Gorusmeleri", detail: "GE ile gama kamera tasima isleri hakkinda gorusme yap.", priority: "orta", time: "bugun", status: "bekliyor", note: "", recurrence: "tek-seferlik", recurrenceDay: null, subtasks: [], startedAt: null },
-  { id: 3, category: "Kosu Koclugu", emoji: "🏃", title: "Haftalik Antrenman Planlari", detail: "Her sporcu icin haftalik kosu plani olustur.", priority: "orta", time: "bugun", status: "bekliyor", note: "", recurrence: "haftalik", recurrenceDay: "Pazartesi", subtasks: [
-    { id: "3-1", label: "Arzu Celik", done: false },
-    { id: "3-2", label: "Cansel Celik", done: false },
-    { id: "3-3", label: "Cagatay Yilmaz", done: false },
+  { id: 7, category: "Biyomedikal", emoji: "🤝", title: "GE - Gama Kamera Taşıma Görüşmeleri", detail: "GE ile gama kamera taşıma işleri hakkında görüşme yap.", priority: "orta", time: "bugun", status: "bekliyor", note: "", recurrence: "tek-seferlik", recurrenceDay: null, subtasks: [], startedAt: null },
+  { id: 3, category: "Koşu Koçluğu", emoji: "🏃", title: "Haftalık Antrenman Planları", detail: "Her sporcu için haftalık koşu planı oluştur.", priority: "orta", time: "bugun", status: "bekliyor", note: "", recurrence: "haftalik", recurrenceDay: "Pazartesi", subtasks: [
+    { id: "3-1", label: "Arzu Çelik", done: false },
+    { id: "3-2", label: "Cansel Çelik", done: false },
+    { id: "3-3", label: "Çağatay Yılmaz", done: false },
     { id: "3-4", label: "Erhan Kaya", done: false },
-    { id: "3-5", label: "Goksel Celik", done: false },
-    { id: "3-6", label: "Hasan Firat Sarioglu", done: false },
-    { id: "3-7", label: "Meliha Sultan Ozenc", done: false },
-    { id: "3-8", label: "Tugce Calikoglu Eski", done: false },
-    { id: "3-9", label: "Volkan Gunduz", done: false },
-    { id: "3-10", label: "Zeynep Yesil", done: false },
+    { id: "3-5", label: "Göksel Çelik", done: false },
+    { id: "3-6", label: "Hasan Fırat Sarıoğlu", done: false },
+    { id: "3-7", label: "Meliha Sultan Özenç", done: false },
+    { id: "3-8", label: "Tuğçe Çalıkoğlu Eski", done: false },
+    { id: "3-9", label: "Volkan Gündüz", done: false },
+    { id: "3-10", label: "Zeynep Yeşil", done: false },
   ], startedAt: null },
-  { id: 4, category: "Kisisel", emoji: "🐱", title: "Luna - Su Sebili Filtresi", detail: "Luna icin su sebili filtresi satin al.", priority: "orta", time: "bugun", status: "bekliyor", note: "", recurrence: "tek-seferlik", recurrenceDay: null, subtasks: [], startedAt: null },
-  { id: 5, category: "Kisisel", emoji: "🚗", title: "Arac Muayenesi", detail: "Arac muayenesi icin randevu al.", priority: "orta", time: "bugun", status: "bekliyor", note: "", recurrence: "tek-seferlik", recurrenceDay: null, subtasks: [], startedAt: null },
+  { id: 4, category: "Kişisel", emoji: "🐱", title: "Luna - Su Sebili Filtresi", detail: "Luna için su sebili filtresi satın al.", priority: "orta", time: "bugun", status: "bekliyor", note: "", recurrence: "tek-seferlik", recurrenceDay: null, subtasks: [], startedAt: null },
+  { id: 5, category: "Kişisel", emoji: "🚗", title: "Araç Muayenesi", detail: "Araç muayenesi için randevu al.", priority: "orta", time: "bugun", status: "bekliyor", note: "", recurrence: "tek-seferlik", recurrenceDay: null, subtasks: [], startedAt: null },
 ];
 
 function formatElapsed(isoString) {
@@ -94,7 +94,7 @@ function TimeEditor({ value, onChange, onClose }) {
     <div style={{ marginTop: "0.5rem", background: "#0d0d14", border: "1px solid #1e293b", borderRadius: 8, padding: "0.7rem 0.9rem" }}>
       <div style={{ fontSize: "0.72rem", color: "#64748b", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "0.5rem" }}>Zamanlama</div>
       <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", marginBottom: "0.5rem" }}>
-        {[{label:"Bugun", value:"bugun"},{label:"Yarin", value:"yarin"}].map(opt => (
+        {[{label:"Bugün", value:"bugun"},{label:"Yarın", value:"yarin"}].map(opt => (
           <button key={opt.value} onClick={() => { onChange(opt.value); onClose(); }} style={{ fontSize: "0.72rem", padding: "3px 12px", borderRadius: 99, cursor: "pointer", border: "none", background: value === opt.value ? "#818cf8" : "#1e293b", color: value === opt.value ? "#0d0d14" : "#94a3b8", fontWeight: value === opt.value ? "bold" : "normal" }}>
             {opt.label}
           </button>
@@ -195,7 +195,7 @@ function WeeklyCalendar({ tasks }) {
       <div style={{ overflowX: "auto" }}>
         <div style={{ minWidth: 360 }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "0.2rem", marginBottom: "0.2rem" }}>
-            {["Pt","Sa","Ca","Pe","Cu","Ct","Pz"].map(d => (
+            {["Pt","Sa","Ça","Pe","Cu","Ct","Pz"].map(d => (
               <div key={d} style={{ textAlign: "center", fontSize: "0.65rem", color: "#475569", padding: "0.2rem 0" }}>{d}</div>
             ))}
           </div>
@@ -232,7 +232,7 @@ function WeeklyCalendar({ tasks }) {
             <button onClick={() => setSelectedDay(null)} style={{ background: "transparent", border: "none", color: "#475569", cursor: "pointer", fontSize: "1.1rem", lineHeight: 1 }}>x</button>
           </div>
           {selectedTasks.length === 0 ? (
-            <div style={{ fontSize: "0.78rem", color: "#475569", textAlign: "center", padding: "0.75rem 0" }}>Bu gun icin gorev yok</div>
+            <div style={{ fontSize: "0.78rem", color: "#475569", textAlign: "center", padding: "0.75rem 0" }}>Bu gün için görev yok</div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: "0.45rem" }}>
               {selectedTasks.map(t => (
@@ -253,7 +253,6 @@ function WeeklyCalendar({ tasks }) {
     </div>
   );
 }
-
 
 function MonthlyCalendar({ tasks }) {
   const [base, setBase] = useState(new Date());
@@ -302,7 +301,7 @@ function MonthlyCalendar({ tasks }) {
       <div style={{ overflowX: "auto" }}>
         <div style={{ minWidth: 360 }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "0.2rem", marginBottom: "0.2rem" }}>
-            {["Pt","Sa","Ca","Pe","Cu","Ct","Pz"].map(d => (
+            {["Pt","Sa","Ça","Pe","Cu","Ct","Pz"].map(d => (
               <div key={d} style={{ textAlign: "center", fontSize: "0.65rem", color: "#475569", padding: "0.2rem 0" }}>{d}</div>
             ))}
           </div>
@@ -339,7 +338,7 @@ function MonthlyCalendar({ tasks }) {
             <button onClick={() => setSelectedDay(null)} style={{ background: "transparent", border: "none", color: "#475569", cursor: "pointer", fontSize: "1.1rem", lineHeight: 1 }}>x</button>
           </div>
           {selectedTasks.length === 0 ? (
-            <div style={{ fontSize: "0.78rem", color: "#475569", textAlign: "center", padding: "0.75rem 0" }}>Bu gun icin gorev yok</div>
+            <div style={{ fontSize: "0.78rem", color: "#475569", textAlign: "center", padding: "0.75rem 0" }}>Bu gün için görev yok</div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: "0.45rem" }}>
               {selectedTasks.map(t => (
@@ -392,10 +391,9 @@ function Yapilacaklar() {
   const [addingTask, setAddingTask] = useState(false);
   const [editingTitle, setEditingTitle] = useState(null);
   const [titleInput, setTitleInput] = useState("");
-  const [newTask, setNewTask] = useState({ title: "", detail: "", category: "Kisisel", emoji: "📌", priority: "orta", time: "bugun" });
+  const [newTask, setNewTask] = useState({ title: "", detail: "", category: "Kişisel", emoji: "📌", priority: "orta", time: "bugun" });
   const [loaded, setLoaded] = useState(false);
 
-  // ✅ DÜZELTME: Sadece localStorage kullanılıyor
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -478,7 +476,7 @@ function Yapilacaklar() {
     const id = Date.now();
     const prefixedTitle = datePrefix() + " " + title;
     setTasks(prev => [...prev, { id, category: newTask.category, emoji: newTask.emoji, title: prefixedTitle, detail: newTask.detail, priority: newTask.priority, time: newTask.time, status: "bekliyor", note: "", recurrence: "tek-seferlik", recurrenceDay: null, subtasks: [], startedAt: null }]);
-    setNewTask({ title: "", detail: "", category: "Kisisel", emoji: "📌", priority: "orta", time: "bugun" });
+    setNewTask({ title: "", detail: "", category: "Kişisel", emoji: "📌", priority: "orta", time: "bugun" });
     setAddingTask(false);
   };
 
@@ -488,8 +486,8 @@ function Yapilacaklar() {
   };
 
   const formatTimeLabel = (val) => {
-    if (!val || val === "bugun") return "Bugun";
-    if (val === "yarin") return "Yarin";
+    if (!val || val === "bugun") return "Bugün";
+    if (val === "yarin") return "Yarın";
     if (val && val.match(/^\d{4}/)) return new Date(val).toLocaleDateString("tr-TR", { day: "numeric", month: "short" });
     return val;
   };
@@ -507,11 +505,11 @@ function Yapilacaklar() {
         {/* Header */}
         <div style={{ marginBottom: "2rem" }}>
           <div style={{ fontSize: "0.72rem", letterSpacing: "0.2em", color: "#64748b", textTransform: "uppercase", marginBottom: "0.3rem" }}>{todayLabel}</div>
-          <h1 style={{ fontSize: "2rem", fontWeight: "normal", margin: 0, color: "#f1f5f9", letterSpacing: "-0.02em" }}>Yapilacaklar</h1>
+          <h1 style={{ fontSize: "2rem", fontWeight: "normal", margin: 0, color: "#f1f5f9", letterSpacing: "-0.02em" }}>Yapılacaklar</h1>
           <div style={{ marginTop: "1rem" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
               <div style={{ display: "flex", gap: "0.75rem" }}>
-                <span style={{ fontSize: "0.72rem", color: "#22c55e" }}>{"✓ " + completed + " tamamlandi"}</span>
+                <span style={{ fontSize: "0.72rem", color: "#22c55e" }}>{"✓ " + completed + " tamamlandı"}</span>
                 {inProgress > 0 && <span style={{ fontSize: "0.72rem", color: "#f59e0b" }}>{"● " + inProgress + " devam ediyor"}</span>}
                 <span style={{ fontSize: "0.72rem", color: "#475569" }}>{(tasks.length - completed - inProgress) + " bekliyor"}</span>
               </div>
@@ -524,7 +522,7 @@ function Yapilacaklar() {
           </div>
           {/* View Toggle */}
           <div style={{ display: "flex", gap: "0.4rem", marginTop: "1rem" }}>
-            {[{id:"liste",label:"Liste"},{id:"haftalik",label:"Haftalik"},{id:"aylik",label:"Aylik"}].map(v => (
+            {[{id:"liste",label:"Liste"},{id:"haftalik",label:"Haftalık"},{id:"aylik",label:"Aylık"}].map(v => (
               <button key={v.id} onClick={() => setView(v.id)} style={{ fontSize: "0.72rem", padding: "4px 12px", borderRadius: 99, border: "none", cursor: "pointer", background: view === v.id ? "#818cf8" : "#1e293b", color: view === v.id ? "#0d0d14" : "#94a3b8", fontWeight: view === v.id ? "bold" : "normal", transition: "all 0.2s" }}>
                 {v.label}
               </button>
@@ -567,14 +565,14 @@ function Yapilacaklar() {
                                   onKeyDown={e => { if (e.key === "Enter") saveTitle(task.id); if (e.key === "Escape") setEditingTitle(null); }}
                                   style={{ flex: 1, background: "#1e293b", border: "1px solid #475569", borderRadius: 6, padding: "4px 8px", color: "#f1f5f9", fontSize: "0.95rem", fontWeight: "bold", outline: "none" }} />
                                 <button onClick={() => saveTitle(task.id)} style={{ background: "#22c55e", border: "none", borderRadius: 6, padding: "3px 8px", color: "#0d0d14", cursor: "pointer", fontSize: "0.72rem", fontWeight: "bold" }}>Kaydet</button>
-                                <button onClick={() => setEditingTitle(null)} style={{ background: "#1e293b", border: "none", borderRadius: 6, padding: "3px 6px", color: "#94a3b8", cursor: "pointer", fontSize: "0.72rem" }}>Iptal</button>
+                                <button onClick={() => setEditingTitle(null)} style={{ background: "#1e293b", border: "none", borderRadius: 6, padding: "3px 6px", color: "#94a3b8", cursor: "pointer", fontSize: "0.72rem" }}>İptal</button>
                               </div>
                             ) : (
                               <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "0.4rem" }}>
-                                <div onClick={() => { setTitleInput(task.title); setEditingTitle(task.id); }} style={{ fontSize: "0.95rem", fontWeight: "bold", color: "#f1f5f9", textDecoration: task.status === "tamamlandi" ? "line-through" : "none", cursor: "text", flex: 1 }} title="Duzenlemek icin tikla">
+                                <div onClick={() => { setTitleInput(task.title); setEditingTitle(task.id); }} style={{ fontSize: "0.95rem", fontWeight: "bold", color: "#f1f5f9", textDecoration: task.status === "tamamlandi" ? "line-through" : "none", cursor: "text", flex: 1 }} title="Düzenlemek için tıkla">
                                   {task.emoji + " " + task.title}
                                 </div>
-                                <button onClick={() => deleteTask(task.id)} title="Gorevi sil" style={{ background: "transparent", border: "none", color: "#334155", cursor: "pointer", fontSize: "0.8rem", padding: "0 2px", flexShrink: 0, lineHeight: 1 }}
+                                <button onClick={() => deleteTask(task.id)} title="Görevi sil" style={{ background: "transparent", border: "none", color: "#334155", cursor: "pointer", fontSize: "0.8rem", padding: "0 2px", flexShrink: 0, lineHeight: 1 }}
                                   onMouseEnter={e => e.target.style.color = "#ef4444"}
                                   onMouseLeave={e => e.target.style.color = "#334155"}>
                                   🗑
@@ -609,7 +607,7 @@ function Yapilacaklar() {
 
                               {task.subtasks.length > 0 && (
                                 <button onClick={() => setExpanded(e => ({ ...e, [task.id]: !e[task.id] }))} style={{ fontSize: "0.68rem", padding: "2px 8px", borderRadius: 99, background: "rgba(255,255,255,0.06)", color: "#94a3b8", border: "none", cursor: "pointer" }}>
-                                  {(isExpanded ? "▲ " : "▼ ") + doneSubtasks + "/" + task.subtasks.length + " alt gorev"}
+                                  {(isExpanded ? "▲ " : "▼ ") + doneSubtasks + "/" + task.subtasks.length + " alt görev"}
                                 </button>
                               )}
                             </div>
@@ -645,14 +643,14 @@ function Yapilacaklar() {
                               <div style={{ marginTop: "0.6rem", display: "flex", gap: "0.4rem" }}>
                                 <input autoFocus value={newSubtask[task.id] || ""} onChange={e => setNewSubtask(n => ({ ...n, [task.id]: e.target.value }))}
                                   onKeyDown={e => { if (e.key === "Enter") addSubtask(task.id); if (e.key === "Escape") setAddingSubtask(null); }}
-                                  placeholder="Alt gorev adi..."
+                                  placeholder="Alt görev adı..."
                                   style={{ flex: 1, background: "#1e293b", border: "1px solid #334155", borderRadius: 6, padding: "4px 8px", color: "#e2e8f0", fontSize: "0.78rem", outline: "none" }} />
                                 <button onClick={() => addSubtask(task.id)} style={{ background: "#22c55e", border: "none", borderRadius: 6, padding: "4px 10px", color: "#0d0d14", cursor: "pointer", fontSize: "0.75rem", fontWeight: "bold" }}>Ekle</button>
-                                <button onClick={() => setAddingSubtask(null)} style={{ background: "#1e293b", border: "none", borderRadius: 6, padding: "4px 8px", color: "#94a3b8", cursor: "pointer", fontSize: "0.75rem" }}>Iptal</button>
+                                <button onClick={() => setAddingSubtask(null)} style={{ background: "#1e293b", border: "none", borderRadius: 6, padding: "4px 8px", color: "#94a3b8", cursor: "pointer", fontSize: "0.75rem" }}>İptal</button>
                               </div>
                             ) : (
                               <button onClick={() => { setAddingSubtask(task.id); setExpanded(e => ({ ...e, [task.id]: true })); }} style={{ marginTop: "0.5rem", background: "transparent", border: "none", color: "#334155", cursor: "pointer", fontSize: "0.72rem", padding: 0, display: "block" }}>
-                                + alt gorev ekle
+                                + alt görev ekle
                               </button>
                             )}
 
@@ -663,7 +661,7 @@ function Yapilacaklar() {
                                   placeholder="Not ekle..."
                                   style={{ flex: 1, background: "#1e293b", border: "1px solid #334155", borderRadius: 6, padding: "4px 8px", color: "#e2e8f0", fontSize: "0.78rem", outline: "none" }} />
                                 <button onClick={() => saveNote(task.id)} style={{ background: "#22c55e", border: "none", borderRadius: 6, padding: "4px 10px", color: "#0d0d14", cursor: "pointer", fontSize: "0.75rem", fontWeight: "bold" }}>Kaydet</button>
-                                <button onClick={() => setEditingNote(null)} style={{ background: "#1e293b", border: "none", borderRadius: 6, padding: "4px 8px", color: "#94a3b8", cursor: "pointer", fontSize: "0.75rem" }}>Iptal</button>
+                                <button onClick={() => setEditingNote(null)} style={{ background: "#1e293b", border: "none", borderRadius: 6, padding: "4px 8px", color: "#94a3b8", cursor: "pointer", fontSize: "0.75rem" }}>İptal</button>
                               </div>
                             ) : task.note ? (
                               <div style={{ marginTop: "0.5rem", fontSize: "0.78rem", color: "#94a3b8", fontStyle: "italic", cursor: "pointer" }} onClick={() => { setNoteInput(task.note); setEditingNote(task.id); }}>
@@ -686,17 +684,17 @@ function Yapilacaklar() {
             {/* Add New Task */}
             {addingTask ? (
               <div style={{ background: "#13131f", border: "1px solid #334155", borderRadius: 14, padding: "1.1rem 1.2rem", marginBottom: "1rem" }}>
-                <div style={{ fontSize: "0.72rem", color: "#64748b", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "0.75rem" }}>Yeni Gorev</div>
+                <div style={{ fontSize: "0.72rem", color: "#64748b", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "0.75rem" }}>Yeni Görev</div>
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
                   <div style={{ display: "flex", gap: "0.4rem" }}>
                     <input value={newTask.emoji} onChange={e => setNewTask(n => ({ ...n, emoji: e.target.value }))} style={{ width: 44, background: "#1e293b", border: "1px solid #334155", borderRadius: 6, padding: "6px 8px", color: "#e2e8f0", fontSize: "1rem", outline: "none", textAlign: "center" }} />
                     <input autoFocus value={newTask.title} onChange={e => setNewTask(n => ({ ...n, title: e.target.value }))}
                       onKeyDown={e => { if (e.key === "Enter") addTask(); if (e.key === "Escape") setAddingTask(false); }}
-                      placeholder="Gorev basligi..."
+                      placeholder="Görev başlığı..."
                       style={{ flex: 1, background: "#1e293b", border: "1px solid #334155", borderRadius: 6, padding: "6px 10px", color: "#e2e8f0", fontSize: "0.88rem", outline: "none" }} />
                   </div>
                   <input value={newTask.detail} onChange={e => setNewTask(n => ({ ...n, detail: e.target.value }))}
-                    placeholder="Aciklama (istege bagli)..."
+                    placeholder="Açıklama (isteğe bağlı)..."
                     style={{ background: "#1e293b", border: "1px solid #334155", borderRadius: 6, padding: "6px 10px", color: "#e2e8f0", fontSize: "0.78rem", outline: "none" }} />
                   <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", alignItems: "center" }}>
                     <span style={{ fontSize: "0.7rem", color: "#64748b" }}>Kategori:</span>
@@ -707,7 +705,7 @@ function Yapilacaklar() {
                     ))}
                   </div>
                   <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", alignItems: "center" }}>
-                    <span style={{ fontSize: "0.7rem", color: "#64748b" }}>Oncelik:</span>
+                    <span style={{ fontSize: "0.7rem", color: "#64748b" }}>Öncelik:</span>
                     {PRIORITIES.map(p => (
                       <button key={p} onClick={() => setNewTask(n => ({ ...n, priority: p }))} style={{ fontSize: "0.68rem", padding: "2px 10px", borderRadius: 99, border: "none", cursor: "pointer", background: newTask.priority === p ? priorityColor[p] : "#1e293b", color: newTask.priority === p ? "#0d0d14" : "#94a3b8", fontWeight: newTask.priority === p ? "bold" : "normal" }}>
                         {priorityLabel[p]}
@@ -718,19 +716,19 @@ function Yapilacaklar() {
                     <span style={{ fontSize: "0.7rem", color: "#64748b" }}>Zaman:</span>
                     {["bugun", "yarin"].map(t => (
                       <button key={t} onClick={() => setNewTask(n => ({ ...n, time: t }))} style={{ fontSize: "0.68rem", padding: "2px 10px", borderRadius: 99, border: "none", cursor: "pointer", background: newTask.time === t ? "#818cf8" : "#1e293b", color: newTask.time === t ? "#0d0d14" : "#94a3b8", fontWeight: newTask.time === t ? "bold" : "normal" }}>
-                        {t}
+                        {t === "bugun" ? "Bugün" : "Yarın"}
                       </button>
                     ))}
                   </div>
                   <div style={{ display: "flex", gap: "0.4rem", marginTop: "0.25rem" }}>
                     <button onClick={addTask} style={{ background: "#22c55e", border: "none", borderRadius: 6, padding: "6px 14px", color: "#0d0d14", cursor: "pointer", fontSize: "0.8rem", fontWeight: "bold" }}>Ekle</button>
-                    <button onClick={() => setAddingTask(false)} style={{ background: "#1e293b", border: "none", borderRadius: 6, padding: "6px 12px", color: "#94a3b8", cursor: "pointer", fontSize: "0.8rem" }}>Iptal</button>
+                    <button onClick={() => setAddingTask(false)} style={{ background: "#1e293b", border: "none", borderRadius: 6, padding: "6px 12px", color: "#94a3b8", cursor: "pointer", fontSize: "0.8rem" }}>İptal</button>
                   </div>
                 </div>
               </div>
             ) : (
               <button onClick={() => setAddingTask(true)} style={{ width: "100%", background: "transparent", border: "1px dashed #1e293b", borderRadius: 14, padding: "0.8rem", color: "#334155", cursor: "pointer", fontSize: "0.8rem", marginBottom: "1rem" }}>
-                + yeni gorev ekle
+                + yeni görev ekle
               </button>
             )}
           </div>
@@ -775,8 +773,9 @@ function Yapilacaklar() {
             }} />
           </label>
         </div>
-        <div style={{ marginTop: "0.5rem", fontSize: "0.68rem", color: "#1e293b", textAlign: "center" }}>
-          Oncelik rozetine tikla: dongüsel degisir - tüm rozetler tiklanabilir
+
+        <div style={{ marginTop: "0.75rem", fontSize: "0.68rem", color: "#1e293b", textAlign: "center" }}>
+          Öncelik rozetine tıkla: döngüsel değişir · tüm rozetler tıklanabilir
         </div>
       </div>
     </div>
