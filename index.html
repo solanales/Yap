@@ -595,17 +595,18 @@ function Yapilacaklar() {
     try{localStorage.setItem(STORAGE_KEY,JSON.stringify({tasks,customCategories,closedTasks}));}catch(_){}
   },[tasks,customCategories,closedTasks,loaded]);
 
-  const [fbLoaded,setFbLoaded] = useState(false);
+  const fbLoadedRef = useRef(false);
 
   // Firebase: syncCode değişince listener kur
   const attachFirebaseListener = (code) => {
     if (!code||!window._fbdb) return;
     if (fbListenerRef.current) fbListenerRef.current();
-    setFbLoaded(false);
+    fbLoadedRef.current = false;
+    setSyncStatus("syncing");
     const ref = window._fbdb.ref("data/"+code);
     const handler = ref.on("value", snap=>{
       const val = snap.val();
-      if (val) {
+      if (val && val.tasks) {
         const today = localDateStr();
         try {
           const t = (val.tasks||[]).map(t=>processTaskOnDayChange(t,today));
@@ -614,9 +615,11 @@ function Yapilacaklar() {
           setClosedTasks(val.closedTasks||[]);
           setSyncStatus("synced");
         } catch(_) { setSyncStatus("error"); }
+      } else {
+        // Firebase'de veri yok — mevcut yerel veriyi yükle
+        setSyncStatus("synced");
       }
-      // İlk okuma tamamlandı — artık yazmaya izin ver
-      setFbLoaded(true);
+      fbLoadedRef.current = true;
     }, ()=>setSyncStatus("error"));
     fbListenerRef.current = ()=>ref.off("value",handler);
   };
@@ -627,10 +630,11 @@ function Yapilacaklar() {
     return ()=>{ if(fbListenerRef.current)fbListenerRef.current(); };
   },[loaded,syncCode]);
 
-  // Firebase: veri değişince yaz — ama sadece Firebase'den ilk okuma yapıldıktan sonra
+  // Firebase: veri değişince yaz — ilk okuma tamamlandıktan sonra
   const isSyncingRef = useRef(false);
   useEffect(()=>{
-    if(!loaded||!syncCode||!fbLoaded||!window._fbdb)return;
+    if(!loaded||!syncCode||!window._fbdb)return;
+    if(!fbLoadedRef.current)return;
     if(isSyncingRef.current)return;
     isSyncingRef.current = true;
     setSyncStatus("syncing");
@@ -638,7 +642,7 @@ function Yapilacaklar() {
       .then(()=>setSyncStatus("synced"))
       .catch(()=>setSyncStatus("error"))
       .finally(()=>{ isSyncingRef.current=false; });
-  },[tasks,customCategories,closedTasks,loaded,syncCode,fbLoaded]);
+  },[tasks,customCategories,closedTasks,loaded,syncCode]);
 
   const connectSync = (code) => {
     const trimmed = code.trim().toLowerCase().replace(/[^a-z0-9]/g,"");
@@ -884,7 +888,7 @@ function Yapilacaklar() {
                   <div style={{ color:"#475569",fontSize:"0.7rem" }}>Bu kodu diğer cihazında girerek verilerini senkronize edebilirsin.</div>
                   <div style={{ display:"flex",gap:"0.4rem",alignItems:"center" }}>
                     <span style={{ fontSize:"0.7rem",color:syncStatus==="synced"?"#22c55e":syncStatus==="syncing"?"#f59e0b":"#ef4444" }}>
-                      {syncStatus==="synced"?"✓ Senkronize":syncStatus==="syncing"?"⏳ Senkronize ediliyor...":"⚠ Bağlantı hatası"}
+                      {syncStatus==="synced"?"✓ Senkronize":syncStatus==="syncing"?"⏳ Bağlanıyor...":"⚠ Bağlantı hatası"}
                     </span>
                   </div>
                   <button onClick={disconnectSync} style={{ background:"transparent",border:"1px solid #334155",borderRadius:6,padding:"4px 10px",color:"#64748b",cursor:"pointer",fontSize:"0.72rem",alignSelf:"flex-start" }}>Bağlantıyı Kes</button>
