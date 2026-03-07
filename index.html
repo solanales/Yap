@@ -596,14 +596,12 @@ function Yapilacaklar() {
   },[tasks,customCategories,closedTasks,loaded]);
 
   const fbLoadedRef = useRef(false);
-  const lastFBDataRef = useRef(null); // Firebase'den gelen son veriyi sakla
+  const writeTimerRef = useRef(null);
 
-  // Firebase: syncCode değişince listener kur
   const attachFirebaseListener = (code) => {
     if (!code||!window._fbdb) return;
     if (fbListenerRef.current) fbListenerRef.current();
     fbLoadedRef.current = false;
-    lastFBDataRef.current = null;
     setSyncStatus("syncing");
     const ref = window._fbdb.ref("data/"+code);
     const handler = ref.on("value", snap=>{
@@ -612,20 +610,16 @@ function Yapilacaklar() {
         const today = localDateStr();
         try {
           const t = (val.tasks||[]).map(t=>processTaskOnDayChange({
-            subtasks:[],
-            recurrenceDays:[],
-            overdue:false,
-            postponedUntil:null,
-            note:"",
-            ...t
+            subtasks:[],recurrenceDays:[],overdue:false,postponedUntil:null,note:"",...t
           },today));
           const c = val.customCategories||[];
           const cl = val.closedTasks||[];
-          // Gelen veriyi sakla — write effect bunu görünce yazmayacak
-          lastFBDataRef.current = JSON.stringify({tasks:t,customCategories:c,closedTasks:cl});
-          setTasks(t);
-          setCustomCategories(c);
-          setClosedTasks(cl);
+          // Sadece ilk yüklemede veya başka cihazdan gelen değişikliklerde uygula
+          if(!fbLoadedRef.current){
+            setTasks(t);
+            setCustomCategories(c);
+            setClosedTasks(cl);
+          }
           setSyncStatus("synced");
         } catch(_) { setSyncStatus("error"); }
       } else {
@@ -642,21 +636,21 @@ function Yapilacaklar() {
     return ()=>{ if(fbListenerRef.current)fbListenerRef.current(); };
   },[loaded,syncCode]);
 
-  // Firebase'e yaz — sadece kullanıcı değişikliği yapınca
+  // Firebase'e yaz — debounce ile (300ms bekle, sonra yaz)
   const isSyncingRef = useRef(false);
   useEffect(()=>{
     if(!loaded||!syncCode||!window._fbdb||!fbLoadedRef.current)return;
-    const current = JSON.stringify({tasks,customCategories,closedTasks});
-    // Firebase'den gelen veriyle aynıysa yazma
-    if(lastFBDataRef.current===current)return;
-    lastFBDataRef.current = null;
-    if(isSyncingRef.current)return;
-    isSyncingRef.current = true;
-    setSyncStatus("syncing");
-    window._fbdb.ref("data/"+syncCode).set({tasks,customCategories,closedTasks})
-      .then(()=>setSyncStatus("synced"))
-      .catch(()=>setSyncStatus("error"))
-      .finally(()=>{ isSyncingRef.current=false; });
+    if(writeTimerRef.current) clearTimeout(writeTimerRef.current);
+    writeTimerRef.current = setTimeout(()=>{
+      if(isSyncingRef.current)return;
+      isSyncingRef.current = true;
+      setSyncStatus("syncing");
+      window._fbdb.ref("data/"+syncCode).set({tasks,customCategories,closedTasks})
+        .then(()=>setSyncStatus("synced"))
+        .catch(()=>setSyncStatus("error"))
+        .finally(()=>{ isSyncingRef.current=false; });
+    },300);
+    return ()=>{ if(writeTimerRef.current) clearTimeout(writeTimerRef.current); };
   },[tasks,customCategories,closedTasks,loaded,syncCode]);
 
   const connectSync = (code) => {
