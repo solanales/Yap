@@ -597,6 +597,14 @@ function Yapilacaklar() {
 
   const fbLoadedRef = useRef(false);
   const writeTimerRef = useRef(null);
+  const deviceId = useRef(()=>{
+    try{
+      let id=localStorage.getItem("device-id");
+      if(!id){id=Math.random().toString(36).slice(2);localStorage.setItem("device-id",id);}
+      return id;
+    }catch(_){return Math.random().toString(36).slice(2);}
+  }).current;
+  const lastWrittenByRef = useRef(null);
 
   const attachFirebaseListener = (code) => {
     if (!code||!window._fbdb) return;
@@ -607,6 +615,12 @@ function Yapilacaklar() {
     const handler = ref.on("value", snap=>{
       const val = snap.val();
       if (val && val.tasks) {
+        // Kendi yazdığımız güncellemeyi geri okuyorsak atla
+        if(val._writtenBy && val._writtenBy === deviceId){
+          fbLoadedRef.current = true;
+          setSyncStatus("synced");
+          return;
+        }
         const today = localDateStr();
         try {
           const t = (val.tasks||[]).map(t=>processTaskOnDayChange({
@@ -614,12 +628,9 @@ function Yapilacaklar() {
           },today));
           const c = val.customCategories||[];
           const cl = val.closedTasks||[];
-          // Sadece ilk yüklemede veya başka cihazdan gelen değişikliklerde uygula
-          if(!fbLoadedRef.current){
-            setTasks(t);
-            setCustomCategories(c);
-            setClosedTasks(cl);
-          }
+          setTasks(t);
+          setCustomCategories(c);
+          setClosedTasks(cl);
           setSyncStatus("synced");
         } catch(_) { setSyncStatus("error"); }
       } else {
@@ -636,7 +647,7 @@ function Yapilacaklar() {
     return ()=>{ if(fbListenerRef.current)fbListenerRef.current(); };
   },[loaded,syncCode]);
 
-  // Firebase'e yaz — debounce ile (300ms bekle, sonra yaz)
+  // Firebase'e yaz — debounce ile, deviceId ekle
   const isSyncingRef = useRef(false);
   useEffect(()=>{
     if(!loaded||!syncCode||!window._fbdb||!fbLoadedRef.current)return;
@@ -645,7 +656,7 @@ function Yapilacaklar() {
       if(isSyncingRef.current)return;
       isSyncingRef.current = true;
       setSyncStatus("syncing");
-      window._fbdb.ref("data/"+syncCode).set({tasks,customCategories,closedTasks})
+      window._fbdb.ref("data/"+syncCode).set({tasks,customCategories,closedTasks,_writtenBy:deviceId})
         .then(()=>setSyncStatus("synced"))
         .catch(()=>setSyncStatus("error"))
         .finally(()=>{ isSyncingRef.current=false; });
