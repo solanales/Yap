@@ -12,6 +12,7 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { background: #0d0d14; color: #e2e8f0; }
+    :root { --card-color: #13131f; }
     input[type=date]::-webkit-calendar-picker-indicator { filter: invert(1); }
   </style>
 </head>
@@ -31,6 +32,9 @@
     };
     firebase.initializeApp(firebaseConfig);
     window._fbdb = firebase.database();
+    // localStorage'dan cardColor'ı CSS değişkeni olarak set et
+    try { const c=localStorage.getItem("card-color"); if(c) document.documentElement.style.setProperty("--card-color",c); } catch(_) {}
+    try { const b=localStorage.getItem("bg-color"); if(b) document.body.style.background=b; } catch(_) {}
   </script>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -325,7 +329,7 @@ function TimeEditor({ value, onChange, onClose }) {
   const ref = useRef();
   useEffect(()=>{ if(ref.current)ref.current.focus(); },[]);
   return (
-    <div style={{ marginTop:"0.5rem",background:"#0d0d14",border:"1px solid #1e293b",borderRadius:8,padding:"0.7rem 0.9rem" }}>
+    <div style={{ marginTop:"0.5rem",background:"var(--card-color)",border:"1px solid #1e293b",borderRadius:8,padding:"0.7rem 0.9rem" }}>
       <div style={{ fontSize:"0.72rem",color:"#64748b",letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:"0.5rem" }}>Zamanlama</div>
       <div style={{ display:"flex",gap:"0.4rem",flexWrap:"wrap",marginBottom:"0.5rem" }}>
         {[{label:"Bugün",value:"bugun"},{label:"Yarın",value:"yarin"}].map(opt=>(
@@ -359,7 +363,7 @@ function RecurrenceEditor({ task, onChange, onClose }) {
     if(!needsDays) onClose();
   };
   return (
-    <div style={{ marginTop:"0.6rem",background:"#0d0d14",border:"1px solid #1e293b",borderRadius:8,padding:"0.7rem 0.9rem",display:"flex",flexDirection:"column",gap:"0.5rem" }}>
+    <div style={{ marginTop:"0.6rem",background:"var(--card-color)",border:"1px solid #1e293b",borderRadius:8,padding:"0.7rem 0.9rem",display:"flex",flexDirection:"column",gap:"0.5rem" }}>
       <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center" }}>
         <div style={{ fontSize:"0.72rem",color:"#64748b",letterSpacing:"0.1em",textTransform:"uppercase" }}>Tekrarlama</div>
         <button onClick={onClose} style={{ background:"transparent",border:"none",color:"#475569",cursor:"pointer",fontSize:"0.75rem",padding:"0 4px" }}>✕ Kapat</button>
@@ -395,7 +399,7 @@ function RecurrenceEditor({ task, onChange, onClose }) {
 function CategoryEditor({ task, allCategories, onSelect, onAddCategory, onClose }) {
   const [input,setInput] = useState("");
   return (
-    <div style={{ marginTop:"0.5rem",background:"#0d0d14",border:"1px solid #1e293b",borderRadius:8,padding:"0.7rem 0.9rem" }}>
+    <div style={{ marginTop:"0.5rem",background:"var(--card-color)",border:"1px solid #1e293b",borderRadius:8,padding:"0.7rem 0.9rem" }}>
       <div style={{ fontSize:"0.72rem",color:"#64748b",letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:"0.5rem" }}>Kategori</div>
       <div style={{ display:"flex",gap:"0.4rem",flexWrap:"wrap",alignItems:"center" }}>
         {allCategories.map(cat=>(
@@ -421,7 +425,7 @@ function CalendarDayDetail({ date, tasks, onClose, onCloseTask }) {
   const dotColor = { bekliyor:"#94a3b8",devamediyor:"#f59e0b",tamamlandi:"#22c55e" };
   const dayTasks = tasks.filter(t=>taskMatchesDate(t,ds));
   return (
-    <div style={{ marginTop:"1rem",background:"#13131f",border:"1px solid #1e293b",borderRadius:12,padding:"1rem" }}>
+    <div style={{ marginTop:"1rem",background:"var(--card-color)",border:"1px solid #1e293b",borderRadius:12,padding:"1rem" }}>
       <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"0.75rem" }}>
         <span style={{ fontSize:"0.85rem",color:"#818cf8",fontWeight:"bold" }}>{date.toLocaleDateString("tr-TR",{weekday:"long",day:"numeric",month:"long"})}</span>
         <button onClick={onClose} style={{ background:"transparent",border:"none",color:"#475569",cursor:"pointer",fontSize:"1.1rem",lineHeight:1 }}>x</button>
@@ -431,7 +435,7 @@ function CalendarDayDetail({ date, tasks, onClose, onCloseTask }) {
       ):(
         <div style={{ display:"flex",flexDirection:"column",gap:"0.45rem" }}>
           {dayTasks.map(t=>(
-            <div key={t.id} style={{ display:"flex",alignItems:"center",gap:"0.6rem",padding:"0.5rem 0.7rem",background:"#0d0d14",borderRadius:8,border:"1px solid "+(t.overdue?"#ef444433":"#1e293b") }}>
+            <div key={t.id} style={{ display:"flex",alignItems:"center",gap:"0.6rem",padding:"0.5rem 0.7rem",background:"var(--card-color)",borderRadius:8,border:"1px solid "+(t.overdue?"#ef444433":"#1e293b") }}>
               <div style={{ width:8,height:8,borderRadius:"50%",background:t.overdue?"#ef4444":(dotColor[t.status]||"#94a3b8"),flexShrink:0 }}/>
               <span style={{ fontSize:"0.82rem",color:t.status==="tamamlandi"?"#475569":"#cbd5e1",textDecoration:t.status==="tamamlandi"?"line-through":"none",flex:1 }}>{t.emoji+" "+titleForDate(t,ds)}</span>
               <span style={{ fontSize:"0.65rem",padding:"1px 7px",borderRadius:99,background:t.overdue?"rgba(239,68,68,0.12)":t.status==="bekliyor"?"rgba(148,163,184,0.12)":t.status==="devamediyor"?"rgba(245,158,11,0.12)":"rgba(34,197,94,0.12)",color:t.overdue?"#ef4444":t.status==="bekliyor"?"#94a3b8":t.status==="devamediyor"?"#f59e0b":"#22c55e" }}>
@@ -460,7 +464,7 @@ function CalendarGrid({ days, tasks, todayStr, selectedDay, onSelect, minHeight=
         const isToday=ds===todayStr, isSel=selectedDay&&selectedDay.ds===ds;
         return (
           <div key={i} onClick={()=>onSelect(isSel?null:{ds,date:day})}
-            style={{ minHeight,background:isSel?"#1e1e3a":isToday?"#1a1a2e":inMonth?"#13131f":"#0d0d14",border:"1px solid "+(isSel?"#818cf8":isToday?"#818cf855":"#1e293b"),borderRadius:7,padding:"0.3rem",opacity:inMonth?1:0.3,cursor:"pointer" }}>
+            style={{ minHeight,background:isSel?"#1e1e3a":isToday?"#1a1a2e":inMonth?"var(--card-color)":"transparent",border:"1px solid "+(isSel?"#818cf8":isToday?"#818cf855":"#1e293b"),borderRadius:7,padding:"0.3rem",opacity:inMonth?1:0.3,cursor:"pointer" }}>
             <div style={{ fontSize:"0.68rem",color:isSel||isToday?"#818cf8":"#64748b",textAlign:"center",fontWeight:(isToday||isSel)?"bold":"normal",marginBottom:"0.2rem" }}>{day.getDate()}</div>
             <div style={{ display:"flex",flexWrap:"wrap",gap:3,justifyContent:"center" }}>
               {dt.slice(0,4).map(t=>(
@@ -548,6 +552,8 @@ function Yapilacaklar() {
   const [customCategories,setCustomCategories] = useState([]);
   const [view,setView] = useState("liste");
   const [editingNote,setEditingNote] = useState(null);
+  const [editingDetail,setEditingDetail] = useState(null);
+  const [detailInput,setDetailInput] = useState("");
   const [noteInput,setNoteInput] = useState("");
   const [expanded,setExpanded] = useState({});
   const [newSubtask,setNewSubtask] = useState({});
@@ -578,7 +584,7 @@ function Yapilacaklar() {
   };
   useEffect(()=>{ try{localStorage.setItem("sound-enabled",soundOn);}catch(_){} },[soundOn]);
   useEffect(()=>{ try{localStorage.setItem("bg-color",bgColor);document.body.style.background=bgColor;}catch(_){} },[bgColor]);
-  useEffect(()=>{ try{localStorage.setItem("card-color",cardColor);}catch(_){} },[cardColor]);
+  useEffect(()=>{ try{localStorage.setItem("card-color",cardColor);document.documentElement.style.setProperty("--card-color",cardColor);}catch(_){} },[cardColor]);
 
   useEffect(()=>{
     try {
@@ -900,10 +906,10 @@ function Yapilacaklar() {
             </button>
           </div>
           {showColorPanel&&(
-            <div style={{ marginTop:"0.75rem",background:"#13131f",border:"1px solid #334155",borderRadius:12,padding:"1rem" }}>
+            <div style={{ marginTop:"0.75rem",background:"var(--card-color)",border:"1px solid #334155",borderRadius:12,padding:"1rem" }}>
               <div style={{ fontSize:"0.72rem",color:"#64748b",letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:"0.75rem" }}>Arka Plan Rengi</div>
               <div style={{ display:"flex",gap:"0.5rem",flexWrap:"wrap",marginBottom:"0.5rem" }}>
-                {["#c8d6e5","#dfe6e9","#d6eaf8","#d5d8dc","#e8daef","#d1f2eb","#fde8d8","#fdfefe","#eaf4fc","#f4ecf7","#e8f8f5","#fef9e7","#fdedec","#eaeded","#f2f3f4"].map(c=>(
+                {["#0d0d14","#0f172a","#1a1a2e","#0f0e17","#1b1b2f","#16213e","#1a1a1a","#0d1117","#1e1b2e","#0a0a0f","#12111a","#060a10","#1f1235","#0e1628","#14181c"].map(c=>(
                   <button key={c} onClick={()=>setBgColor(c)} style={{ width:28,height:28,borderRadius:6,background:c,border:bgColor===c?"2px solid #818cf8":"2px solid #334155",cursor:"pointer",padding:0 }}/>
                 ))}
               </div>
@@ -915,7 +921,7 @@ function Yapilacaklar() {
               </div>
               <div style={{ fontSize:"0.72rem",color:"#64748b",letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:"0.75rem" }}>Görev Kutusu Rengi</div>
               <div style={{ display:"flex",gap:"0.5rem",flexWrap:"wrap",marginBottom:"0.5rem" }}>
-                {["#aab7c4","#b2bec3","#a9cce3","#b3b6b7","#c39bd3","#a2d9ce","#f0b27a","#d5dbdb","#85c1e9","#d2b4de","#76d7c4","#f9e79f","#f1948a","#bdc3c7","#d7dbdd"].map(c=>(
+                {["#13131f","#1e293b","#0f172a","#1a1a2e","#16213e","#1e1b2e","#0d1117","#1f1235","#12111a","#1a1525","#0e1628","#161b22","#1c1c2e","#0f0f1a","#1a1a1a"].map(c=>(
                   <button key={c} onClick={()=>setCardColor(c)} style={{ width:28,height:28,borderRadius:6,background:c,border:cardColor===c?"2px solid #818cf8":"2px solid #334155",cursor:"pointer",padding:0 }}/>
                 ))}
               </div>
@@ -927,7 +933,8 @@ function Yapilacaklar() {
               </div>
             </div>
           )}
-            <div style={{ marginTop:"0.75rem",background:"#13131f",border:"1px solid #334155",borderRadius:12,padding:"1rem",fontSize:"0.78rem" }}>
+          {showSyncPanel&&(
+            <div style={{ marginTop:"0.75rem",background:"var(--card-color)",border:"1px solid #334155",borderRadius:12,padding:"1rem",fontSize:"0.78rem" }}>
               {syncCode?(
                 <div style={{ display:"flex",flexDirection:"column",gap:"0.5rem" }}>
                   <div style={{ color:"#64748b" }}>Bağlı Sync Kodu:</div>
@@ -1064,7 +1071,20 @@ function Yapilacaklar() {
                                 </div>
                               </div>
                             )}
-                            <div style={{ fontSize:"0.78rem",color:"#64748b",marginTop:"0.2rem" }}>{task.detail}</div>
+                            {editingDetail===task.id?(
+                              <div style={{ display:"flex",gap:"0.4rem",alignItems:"center",marginTop:"0.2rem" }}>
+                                <input autoFocus value={detailInput} onChange={e=>setDetailInput(e.target.value)}
+                                  onKeyDown={e=>{ if(e.key==="Enter"){setTasks(p=>p.map(t=>t.id===task.id?{...t,detail:detailInput}:t));setEditingDetail(null);} if(e.key==="Escape")setEditingDetail(null); }}
+                                  style={{ flex:1,background:"#1e293b",border:"1px solid #334155",borderRadius:6,padding:"3px 8px",color:"#e2e8f0",fontSize:"0.75rem",outline:"none" }}/>
+                                <button onClick={()=>{setTasks(p=>p.map(t=>t.id===task.id?{...t,detail:detailInput}:t));setEditingDetail(null);}} style={{ background:"#818cf8",border:"none",borderRadius:6,padding:"3px 8px",color:"#0d0d14",cursor:"pointer",fontSize:"0.72rem" }}>✓</button>
+                                <button onClick={()=>setEditingDetail(null)} style={{ background:"transparent",border:"none",color:"#475569",cursor:"pointer",fontSize:"0.8rem" }}>✕</button>
+                              </div>
+                            ):(
+                              <div onClick={()=>{setEditingDetail(task.id);setDetailInput(task.detail||"");}}
+                                style={{ fontSize:"0.78rem",color:task.detail?"#64748b":"#334155",marginTop:"0.2rem",cursor:"pointer",minHeight:"1rem" }}>
+                                {task.detail||<span style={{color:"#2d3748",fontSize:"0.72rem"}}>+ açıklama ekle</span>}
+                              </div>
+                            )}
 
                             {task.subtasks.length>0&&(()=>{
                               const pct=Math.round((doneSubtasks/task.subtasks.length)*100);
