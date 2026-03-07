@@ -623,7 +623,7 @@ function Yapilacaklar() {
     const ref = window._fbdb.ref("data/"+code);
     const handler = ref.on("value", snap=>{
       const val = snap.val();
-      if (val && val.tasks) {
+      if (val && Array.isArray(val.tasks)) {
         const incomingTime = val._ts || 0;
         // Sadece kendi son yazma zamanımızdan daha yeni ise uygula
         if(incomingTime > lastWriteTimeRef.current){
