@@ -558,6 +558,8 @@ function Yapilacaklar() {
   const [newTask,setNewTask] = useState({title:"",detail:"",category:"Kişisel",emoji:"📌",priority:"orta",time:"bugun"});
   const [loaded,setLoaded] = useState(false);
   const [soundOn,setSoundOn] = useState(()=>{ try{return localStorage.getItem("sound-enabled")!=="false";}catch(_){return true;} });
+  const [bgColor,setBgColor] = useState(()=>{ try{return localStorage.getItem("bg-color")||"#0d0d14";}catch(_){return "#0d0d14";} });
+  const [showColorPanel,setShowColorPanel] = useState(false);
   const [syncCode,setSyncCode] = useState(()=>{ try{return localStorage.getItem("sync-code")||"";}catch(_){return "";} });
   const [syncInput,setSyncInput] = useState("");
   const [showSyncPanel,setShowSyncPanel] = useState(false);
@@ -571,6 +573,7 @@ function Yapilacaklar() {
     restore:()=>soundOn&&sound.restore(), otele:()=>soundOn&&sound.otele(),
   };
   useEffect(()=>{ try{localStorage.setItem("sound-enabled",soundOn);}catch(_){} },[soundOn]);
+  useEffect(()=>{ try{localStorage.setItem("bg-color",bgColor);document.body.style.background=bgColor;}catch(_){} },[bgColor]);
 
   useEffect(()=>{
     try {
@@ -874,7 +877,7 @@ function Yapilacaklar() {
   const weekCategories = [...new Set(weekTasks.map(t=>t.category))];
 
   return (
-    <div style={{ minHeight:"100vh",background:"#0d0d14",fontFamily:"Georgia, serif",padding:"2rem 1rem",color:"#e2e8f0" }}>
+    <div style={{ minHeight:"100vh",background:bgColor,fontFamily:"Georgia, serif",padding:"2rem 1rem",color:"#e2e8f0" }}>
       <div style={{ maxWidth:660,margin:"0 auto" }}>
         {/* Header */}
         <div style={{ marginBottom:"2rem" }}>
@@ -884,11 +887,27 @@ function Yapilacaklar() {
             <button onClick={()=>setSoundOn(o=>!o)} style={{ background:"transparent",border:"none",cursor:"pointer",fontSize:"1.1rem",opacity:soundOn?1:0.35,padding:0 }}>
               {soundOn?"🔊":"🔇"}
             </button>
-            <button onClick={()=>setShowSyncPanel(o=>!o)} title="Senkronizasyon" style={{ background:"transparent",border:"none",cursor:"pointer",fontSize:"1.1rem",padding:0,opacity:syncCode?1:0.4 }}>
+            <button onClick={()=>{setShowColorPanel(o=>!o);setShowSyncPanel(false);}} title="Arka plan rengi" style={{ width:22,height:22,borderRadius:"50%",background:bgColor,border:"2px solid #334155",cursor:"pointer",padding:0,flexShrink:0 }}/>
+            <button onClick={()=>{setShowSyncPanel(o=>!o);setShowColorPanel(false);}} title="Senkronizasyon" style={{ background:"transparent",border:"none",cursor:"pointer",fontSize:"1.1rem",padding:0,opacity:syncCode?1:0.4 }}>
               {syncStatus==="syncing"?"⏳":syncStatus==="synced"?"☁️":syncStatus==="error"?"⚠️":"☁️"}
             </button>
           </div>
-          {showSyncPanel&&(
+          {showColorPanel&&(
+            <div style={{ marginTop:"0.75rem",background:"#13131f",border:"1px solid #334155",borderRadius:12,padding:"1rem" }}>
+              <div style={{ fontSize:"0.72rem",color:"#64748b",letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:"0.75rem" }}>Arka Plan Rengi</div>
+              <div style={{ display:"flex",gap:"0.5rem",flexWrap:"wrap",marginBottom:"0.75rem" }}>
+                {["#0d0d14","#0f172a","#1a1a2e","#0f0e17","#1b1b2f","#16213e","#1a1a1a","#0d1117","#1e1b2e","#0a0a0f","#12111a","#060a10","#1f1235","#0e1628","#14181c"].map(c=>(
+                  <button key={c} onClick={()=>setBgColor(c)} style={{ width:28,height:28,borderRadius:6,background:c,border:bgColor===c?"2px solid #818cf8":"2px solid #334155",cursor:"pointer",padding:0 }}/>
+                ))}
+              </div>
+              <div style={{ display:"flex",gap:"0.5rem",alignItems:"center" }}>
+                <span style={{ fontSize:"0.72rem",color:"#64748b" }}>Özel:</span>
+                <input type="color" value={bgColor} onChange={e=>setBgColor(e.target.value)} style={{ width:36,height:28,border:"none",borderRadius:6,cursor:"pointer",background:"transparent" }}/>
+                <span style={{ fontSize:"0.72rem",color:"#475569",fontFamily:"monospace" }}>{bgColor}</span>
+                <button onClick={()=>setBgColor("#0d0d14")} style={{ marginLeft:"auto",fontSize:"0.68rem",padding:"3px 8px",borderRadius:6,background:"#1e293b",border:"none",color:"#64748b",cursor:"pointer" }}>Sıfırla</button>
+              </div>
+            </div>
+          )}
             <div style={{ marginTop:"0.75rem",background:"#13131f",border:"1px solid #334155",borderRadius:12,padding:"1rem",fontSize:"0.78rem" }}>
               {syncCode?(
                 <div style={{ display:"flex",flexDirection:"column",gap:"0.5rem" }}>
