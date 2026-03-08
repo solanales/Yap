@@ -426,7 +426,7 @@ function titleForDate(task, ds) {
 
 
 function TaskDetailSheet({ task, onClose, cycleStatus, updateTask, handleOtele, closeTask,
-  toggleSubtask, addSubtask, handleRecurrenceChange, allCategories, setCustomCategories,
+  toggleSubtask, addSubtask, reorderSubtasks, handleRecurrenceChange, allCategories, setCustomCategories,
   formatTimeLabel, formatRecurrenceLabel, formatElapsed }) {
   const [editingTitle, setEditingTitle] = useState(null);
   const [titleInput, setTitleInput] = useState("");
@@ -561,8 +561,13 @@ function TaskDetailSheet({ task, onClose, cycleStatus, updateTask, handleOtele, 
 
               {expanded&&task.subtasks.length>0&&(
                 <div style={{ marginTop:"0.75rem",borderLeft:"2px solid #1e293b",paddingLeft:"0.9rem",display:"flex",flexDirection:"column",gap:"0.4rem" }}>
-                  {task.subtasks.map(sub=>(
-                    <div key={sub.id} style={{ display:"flex",alignItems:"center",gap:"0.5rem" }}>
+                  {task.subtasks.map((sub,subIdx)=>(
+                    <div key={sub.id} draggable
+                      onDragStart={e=>e.dataTransfer.setData("subIdx",subIdx)}
+                      onDragOver={e=>e.preventDefault()}
+                      onDrop={e=>{e.preventDefault();const from=parseInt(e.dataTransfer.getData("subIdx"));if(from!==subIdx)reorderSubtasks(task.id,from,subIdx);}}
+                      style={{ display:"flex",alignItems:"center",gap:"0.5rem",cursor:"grab",userSelect:"none" }}>
+                      <span style={{ color:"#334155",fontSize:"0.75rem",cursor:"grab",flexShrink:0 }}>⠿</span>
                       <button onClick={()=>toggleSubtask(task.id,sub.id)} style={{ width:17,height:17,borderRadius:"50%",border:"2px solid "+(sub.done?"#22c55e":"#334155"),background:sub.done?"#22c55e":"transparent",cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",padding:0 }}>
                         {sub.done&&<svg width="8" height="8" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#0d0d14" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
                       </button>
@@ -1009,6 +1014,15 @@ function Yapilacaklar() {
   };
 
   const removeSubtask = (taskId,subId) => setTasks(prev=>prev.map(t=>t.id!==taskId?t:{...t,subtasks:t.subtasks.filter(s=>s.id!==subId)}));
+  const reorderSubtasks = (taskId, fromIdx, toIdx) => {
+    setTasks(prev=>prev.map(t=>{
+      if(t.id!==taskId) return t;
+      const subs = [...t.subtasks];
+      const [moved] = subs.splice(fromIdx, 1);
+      subs.splice(toIdx, 0, moved);
+      return {...t, subtasks: subs};
+    }));
+  };
 
   const closeTask = (id) => {
     s.close();
@@ -1451,8 +1465,13 @@ function Yapilacaklar() {
                             {/* Alt görevler */}
                             {isExpanded&&task.subtasks.length>0&&(
                               <div style={{ marginTop:"0.75rem",borderLeft:"2px solid #1e293b",paddingLeft:"0.9rem",display:"flex",flexDirection:"column",gap:"0.4rem" }}>
-                                {task.subtasks.map(sub=>(
-                                  <div key={sub.id} style={{ display:"flex",alignItems:"center",gap:"0.5rem" }}>
+                                {task.subtasks.map((sub,subIdx)=>(
+                                  <div key={sub.id} draggable
+                                    onDragStart={e=>e.dataTransfer.setData("subIdx",subIdx)}
+                                    onDragOver={e=>e.preventDefault()}
+                                    onDrop={e=>{e.preventDefault();const from=parseInt(e.dataTransfer.getData("subIdx"));if(from!==subIdx)reorderSubtasks(task.id,from,subIdx);}}
+                                    style={{ display:"flex",alignItems:"center",gap:"0.5rem",cursor:"grab",userSelect:"none" }}>
+                                    <span style={{ color:"#334155",fontSize:"0.75rem",cursor:"grab",flexShrink:0 }}>⠿</span>
                                     <button onClick={()=>toggleSubtask(task.id,sub.id)} style={{ width:17,height:17,borderRadius:"50%",border:"2px solid "+(sub.done?"#22c55e":"#334155"),background:sub.done?"#22c55e":"transparent",cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",padding:0 }}>
                                       {sub.done&&<svg width="8" height="8" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#0d0d14" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
                                     </button>
@@ -1592,6 +1611,7 @@ function Yapilacaklar() {
         closeTask={(id)=>{ closeTask(id); setCalendarDetailTask(null); }}
         toggleSubtask={toggleSubtask}
         addSubtask={addSubtask}
+        reorderSubtasks={reorderSubtasks}
         handleRecurrenceChange={handleRecurrenceChange}
         allCategories={allCategories}
         setCustomCategories={setCustomCategories}
