@@ -1332,8 +1332,10 @@ function Yapilacaklar() {
                               </div>
                               <div style={{ display:"flex",gap:"0.3rem",flexShrink:0 }}>
                                 {task.status!=="tamamlandi"&&(
-                                  <button onClick={()=>handleOtele(task)} title="Ertele" style={{ background:"transparent",border:"none",color:"#475569",cursor:"pointer",fontSize:"0.72rem",padding:"0 3px" }}
-                                    onMouseEnter={e=>e.target.style.color="#818cf8"} onMouseLeave={e=>e.target.style.color="#475569"}>⏭</button>
+                                  <button onClick={()=>handleOtele(task)} title={task.postponedUntil?"Ertelemeyi İptal Et":"Ertele"}
+                                    style={{ background:"transparent",border:"none",color:task.postponedUntil?"#818cf8":"#475569",cursor:"pointer",fontSize:"0.72rem",padding:"0 3px" }}
+                                    onMouseEnter={e=>e.target.style.color="#818cf8"} onMouseLeave={e=>e.target.style.color=task.postponedUntil?"#818cf8":"#475569"}>
+                                    {task.postponedUntil?"↩":"⏭"}</button>
                                 )}
                                 <button onClick={()=>closeTask(task.id)} title="Kapat" style={{ background:"transparent",border:"none",color:"#334155",cursor:"pointer",fontSize:"0.8rem",padding:"0 2px" }}
                                   onMouseEnter={e=>e.target.style.color="#f59e0b"} onMouseLeave={e=>e.target.style.color="#334155"}>✕</button>
