@@ -420,10 +420,19 @@ function titleForDate(task, ds) {
   return datePrefix(ds) + " " + raw;
 }
 
-function CalendarDayDetail({ date, tasks, onClose, onCloseTask, onPostponeTask }) {
+function CalendarDayDetail({ date, tasks, onClose, onCloseTask, onPostponeTask, onToggleDateComplete }) {
   const ds = localDateStr(date);
   const dotColor = { bekliyor:"#94a3b8",devamediyor:"#f59e0b",tamamlandi:"#22c55e" };
   const dayTasks = tasks.filter(t=>taskMatchesDate(t,ds));
+
+  const getStatusForDate = (t, ds) => {
+    if (t.recurrence !== "tek-seferlik") {
+      const completed = (t.completedDates||[]).includes(ds);
+      return completed ? "tamamlandi" : (t.status==="tamamlandi"?"bekliyor":t.status);
+    }
+    return t.status;
+  };
+
   return (
     <div style={{ marginTop:"1rem",background:"var(--card-color)",border:"1px solid #1e293b",borderRadius:12,padding:"1rem" }}>
       <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"0.75rem" }}>
@@ -434,27 +443,34 @@ function CalendarDayDetail({ date, tasks, onClose, onCloseTask, onPostponeTask }
         <div style={{ fontSize:"0.78rem",color:"#475569",textAlign:"center",padding:"0.75rem 0" }}>Bu gün için görev yok</div>
       ):(
         <div style={{ display:"flex",flexDirection:"column",gap:"0.45rem" }}>
-          {dayTasks.map(t=>(
+          {dayTasks.map(t=>{
+            const statusForDate = getStatusForDate(t, ds);
+            const isRecurring = t.recurrence !== "tek-seferlik";
+            return (
             <div key={t.id} style={{ display:"flex",alignItems:"center",gap:"0.6rem",padding:"0.5rem 0.7rem",background:"var(--card-color)",borderRadius:8,border:"1px solid "+(t.overdue?"#ef444433":"#1e293b") }}>
-              <div style={{ width:8,height:8,borderRadius:"50%",background:t.overdue?"#ef4444":(dotColor[t.status]||"#94a3b8"),flexShrink:0 }}/>
-              <span style={{ fontSize:"0.82rem",color:t.status==="tamamlandi"?"#475569":"#cbd5e1",textDecoration:t.status==="tamamlandi"?"line-through":"none",flex:1 }}>{t.emoji+" "+titleForDate(t,ds)}</span>
-              <span style={{ fontSize:"0.65rem",padding:"1px 7px",borderRadius:99,background:t.overdue?"rgba(239,68,68,0.12)":t.status==="bekliyor"?"rgba(148,163,184,0.12)":t.status==="devamediyor"?"rgba(245,158,11,0.12)":"rgba(34,197,94,0.12)",color:t.overdue?"#ef4444":t.status==="bekliyor"?"#94a3b8":t.status==="devamediyor"?"#f59e0b":"#22c55e" }}>
-                {t.overdue?"Gecikmiş":t.status==="bekliyor"?"Bekliyor":t.status==="devamediyor"?"Devam":"Tamam"}
+              {isRecurring ? (
+                <div onClick={()=>onToggleDateComplete&&onToggleDateComplete(t,ds)}
+                  style={{ width:16,height:16,borderRadius:"50%",border:"2px solid "+(statusForDate==="tamamlandi"?"#22c55e":"#475569"),background:statusForDate==="tamamlandi"?"#22c55e":"transparent",cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center" }}>
+                  {statusForDate==="tamamlandi"&&<svg width="8" height="8" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#0d0d14" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                </div>
+              ):(
+                <div style={{ width:8,height:8,borderRadius:"50%",background:t.overdue?"#ef4444":(dotColor[t.status]||"#94a3b8"),flexShrink:0 }}/>
+              )}
+              <span style={{ fontSize:"0.82rem",color:statusForDate==="tamamlandi"?"#475569":"#cbd5e1",textDecoration:statusForDate==="tamamlandi"?"line-through":"none",flex:1 }}>{t.emoji+" "+titleForDate(t,ds)}</span>
+              <span style={{ fontSize:"0.65rem",padding:"1px 7px",borderRadius:99,background:t.overdue?"rgba(239,68,68,0.12)":statusForDate==="bekliyor"?"rgba(148,163,184,0.12)":statusForDate==="devamediyor"?"rgba(245,158,11,0.12)":"rgba(34,197,94,0.12)",color:t.overdue?"#ef4444":statusForDate==="bekliyor"?"#94a3b8":statusForDate==="devamediyor"?"#f59e0b":"#22c55e" }}>
+                {t.overdue?"Gecikmiş":statusForDate==="bekliyor"?"Bekliyor":statusForDate==="devamediyor"?"Devam":"Tamam"}
               </span>
-              {t.status!=="tamamlandi"&&onPostponeTask&&(
+              {statusForDate!=="tamamlandi"&&onPostponeTask&&(
                 <button onClick={()=>onPostponeTask(t)} title="Ertele" style={{ background:"transparent",border:"none",color:"#475569",cursor:"pointer",fontSize:"0.8rem",lineHeight:1,padding:"0 2px" }}
                   onMouseEnter={e=>e.target.style.color="#818cf8"} onMouseLeave={e=>e.target.style.color="#475569"}>⏭</button>
               )}
-              {t.status!=="tamamlandi"&&onCloseTask&&(
-                <button onClick={()=>onCloseTask(t.id)} title="Kapat" style={{ background:"transparent",border:"none",color:"#475569",cursor:"pointer",fontSize:"0.85rem",lineHeight:1,padding:"0 2px" }}
-                  onMouseEnter={e=>e.target.style.color="#f59e0b"} onMouseLeave={e=>e.target.style.color="#475569"}>✕</button>
-              )}
-              {t.status==="tamamlandi"&&onCloseTask&&(
+              {onCloseTask&&(
                 <button onClick={()=>onCloseTask(t.id)} title="Kapat" style={{ background:"transparent",border:"none",color:"#475569",cursor:"pointer",fontSize:"0.85rem",lineHeight:1,padding:"0 2px" }}
                   onMouseEnter={e=>e.target.style.color="#f59e0b"} onMouseLeave={e=>e.target.style.color="#475569"}>✕</button>
               )}
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
@@ -488,7 +504,7 @@ function CalendarGrid({ days, tasks, todayStr, selectedDay, onSelect, minHeight=
   );
 }
 
-function WeeklyCalendar({ tasks, onCloseTask, onPostponeTask }) {
+function WeeklyCalendar({ tasks, onCloseTask, onPostponeTask, onToggleDateComplete }) {
   const [base,setBase] = useState(new Date());
   const [selectedDay,setSelectedDay] = useState(null);
   const todayStr = localDateStr();
@@ -513,12 +529,12 @@ function WeeklyCalendar({ tasks, onCloseTask, onPostponeTask }) {
           <CalendarGrid days={days} tasks={tasks} todayStr={todayStr} selectedDay={selectedDay} onSelect={setSelectedDay} minHeight={56}/>
         </div>
       </div>
-      {selectedDay&&<CalendarDayDetail date={selectedDay.date} tasks={tasks} onClose={()=>setSelectedDay(null)} onCloseTask={onCloseTask} onPostponeTask={onPostponeTask}/>}
+      {selectedDay&&<CalendarDayDetail date={selectedDay.date} tasks={tasks} onClose={()=>setSelectedDay(null)} onCloseTask={onCloseTask} onPostponeTask={onPostponeTask} onToggleDateComplete={onToggleDateComplete}/>}
     </div>
   );
 }
 
-function MonthlyCalendar({ tasks, onCloseTask, onPostponeTask }) {
+function MonthlyCalendar({ tasks, onCloseTask, onPostponeTask, onToggleDateComplete }) {
   const [base,setBase] = useState(new Date());
   const [selectedDay,setSelectedDay] = useState(null);
   const todayStr = localDateStr();
@@ -548,7 +564,7 @@ function MonthlyCalendar({ tasks, onCloseTask, onPostponeTask }) {
           <CalendarGrid days={days} tasks={tasks} todayStr={todayStr} selectedDay={selectedDay} onSelect={setSelectedDay} minHeight={46}/>
         </div>
       </div>
-      {selectedDay&&<CalendarDayDetail date={selectedDay.date} tasks={tasks} onClose={()=>setSelectedDay(null)} onCloseTask={onCloseTask} onPostponeTask={onPostponeTask}/>}
+      {selectedDay&&<CalendarDayDetail date={selectedDay.date} tasks={tasks} onClose={()=>setSelectedDay(null)} onCloseTask={onCloseTask} onPostponeTask={onPostponeTask} onToggleDateComplete={onToggleDateComplete}/>}
     </div>
   );
 }
@@ -764,7 +780,15 @@ function Yapilacaklar() {
     }
   };
 
-  const addSubtask = (taskId) => {
+  const toggleDateComplete = (task, ds) => {
+    setTasks(prev=>prev.map(t=>{
+      if(t.id!==task.id) return t;
+      const dates = t.completedDates||[];
+      const already = dates.includes(ds);
+      if(already){ s.reset(); return {...t, completedDates: dates.filter(d=>d!==ds)}; }
+      else { s.complete(); return {...t, completedDates: [...dates, ds]}; }
+    }));
+  };
     const label=(newSubtask[taskId]||"").trim();
     if(!label)return;
     setTasks(prev=>prev.map(t=>t.id!==taskId?t:{...t,subtasks:[...t.subtasks,{id:taskId+"-"+Date.now(),label:datePrefix()+" "+label,done:false}]}));
@@ -807,7 +831,7 @@ function Yapilacaklar() {
     else if(newTask.time==="yarin") initialPrefix=datePrefix(addDays(today,1));
     else if(newTask.time&&newTask.time.match(/^\d{4}/)) initialPrefix=datePrefix(newTask.time);
     else initialPrefix=datePrefix(today);
-    setTasks(prev=>[...prev,{id,category:newTask.category,emoji:newTask.emoji,title:initialPrefix+" "+title,detail:newTask.detail,priority:newTask.priority,time:newTask.time,status:"bekliyor",note:"",recurrence:"tek-seferlik",recurrenceDays:[],subtasks:[],startedAt:null,lastResetDate:today,overdue:false,postponedUntil:null}]);
+    setTasks(prev=>[...prev,{id,category:newTask.category,emoji:newTask.emoji,title:initialPrefix+" "+title,detail:newTask.detail,priority:newTask.priority,time:newTask.time,status:"bekliyor",note:"",recurrence:"tek-seferlik",recurrenceDays:[],subtasks:[],completedDates:[],startedAt:null,lastResetDate:today,overdue:false,postponedUntil:null}]);
     setNewTask({title:"",detail:"",category:"Kişisel",emoji:"📌",priority:"orta",time:"bugun"});
     setAddingTask(false);
   };
@@ -1003,8 +1027,8 @@ function Yapilacaklar() {
           </div>
         </div>
 
-        {view==="haftalik"&&<WeeklyCalendar tasks={tasks} onCloseTask={closeTask} onPostponeTask={handleOtele}/>}
-        {view==="aylik"&&<MonthlyCalendar tasks={tasks} onCloseTask={closeTask} onPostponeTask={handleOtele}/>}
+        {view==="haftalik"&&<WeeklyCalendar tasks={tasks} onCloseTask={closeTask} onPostponeTask={handleOtele} onToggleDateComplete={toggleDateComplete}/>}
+        {view==="aylik"&&<MonthlyCalendar tasks={tasks} onCloseTask={closeTask} onPostponeTask={handleOtele} onToggleDateComplete={toggleDateComplete}/>}
 
         {/* Kategoriler */}
         {view==="kategoriler"&&(
