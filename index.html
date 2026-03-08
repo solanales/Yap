@@ -575,6 +575,7 @@ function Yapilacaklar() {
   const [titleInput,setTitleInput] = useState("");
   const [newTask,setNewTask] = useState({title:"",detail:"",category:"Kişisel",emoji:"📌",priority:"orta",time:"bugun"});
   const [newCatInput,setNewCatInput] = useState("");
+  const [selectedCategory,setSelectedCategory] = useState(null);
   const [loaded,setLoaded] = useState(false);
   const [soundOn,setSoundOn] = useState(()=>{ try{return localStorage.getItem("sound-enabled")!=="false";}catch(_){return true;} });
   const [bgColor,setBgColor] = useState(()=>{ try{return localStorage.getItem("bg-color")||"#0d0d14";}catch(_){return "#0d0d14";} });
@@ -994,7 +995,7 @@ function Yapilacaklar() {
             </div>
           )}
           <div style={{ display:"flex",gap:"0.4rem",marginTop:"1rem",flexWrap:"wrap" }}>
-            {[{id:"liste",label:"Liste"},{id:"haftalik",label:"Haftalık"},{id:"aylik",label:"Aylık"},{id:"kapatilan",label:"Kapatılan"+(closedTasks.length>0?" ("+closedTasks.length+")":"")}].map(v=>(
+            {[{id:"liste",label:"Liste"},{id:"haftalik",label:"Haftalık"},{id:"aylik",label:"Aylık"},{id:"kategoriler",label:"Kategoriler"},{id:"kapatilan",label:"Kapatılan"+(closedTasks.length>0?" ("+closedTasks.length+")":"")}].map(v=>(
               <button key={v.id} onClick={()=>setView(v.id)} style={{ fontSize:"0.72rem",padding:"4px 12px",borderRadius:99,border:"none",cursor:"pointer",background:view===v.id?(v.id==="kapatilan"?"#475569":"#818cf8"):"#1e293b",color:view===v.id?"#f1f5f9":"#94a3b8",fontWeight:view===v.id?"bold":"normal",transition:"all 0.2s" }}>
                 {v.label}
               </button>
@@ -1004,6 +1005,73 @@ function Yapilacaklar() {
 
         {view==="haftalik"&&<WeeklyCalendar tasks={tasks} onCloseTask={closeTask} onPostponeTask={handleOtele}/>}
         {view==="aylik"&&<MonthlyCalendar tasks={tasks} onCloseTask={closeTask} onPostponeTask={handleOtele}/>}
+
+        {/* Kategoriler */}
+        {view==="kategoriler"&&(
+          <div>
+            <div style={{ display:"flex",gap:"0.5rem",flexWrap:"wrap",marginBottom:"1rem",alignItems:"center" }}>
+              {allCategories.map(cat=>(
+                <div key={cat} style={{ display:"flex",alignItems:"center",gap:"0.2rem" }}>
+                  <button onClick={()=>setSelectedCategory(selectedCategory===cat?null:cat)}
+                    style={{ fontSize:"0.78rem",padding:"5px 14px",borderRadius:99,border:"none",cursor:"pointer",background:selectedCategory===cat?"#818cf8":"#1e293b",color:selectedCategory===cat?"#f1f5f9":"#94a3b8",fontWeight:selectedCategory===cat?"bold":"normal",transition:"all 0.2s" }}>
+                    {cat}
+                    <span style={{ marginLeft:6,fontSize:"0.68rem",opacity:0.7 }}>{tasks.filter(t=>t.category===cat).length}</span>
+                  </button>
+                  {!DEFAULT_CATEGORIES.includes(cat)&&(
+                    <button onClick={()=>{
+                      setCustomCategories(prev=>prev.filter(c=>c!==cat));
+                      if(selectedCategory===cat) setSelectedCategory(null);
+                    }} title="Sil" style={{ background:"transparent",border:"none",color:"#334155",cursor:"pointer",fontSize:"0.78rem",padding:"0 2px",lineHeight:1 }}
+                      onMouseEnter={e=>e.target.style.color="#ef4444"} onMouseLeave={e=>e.target.style.color="#334155"}>✕</button>
+                  )}
+                </div>
+              ))}
+              <input value={newCatInput} onChange={e=>setNewCatInput(e.target.value)}
+                onKeyDown={e=>{ if(e.key==="Enter"&&newCatInput.trim()){const c=newCatInput.trim();setCustomCategories(p=>[...new Set([...p,c])]);setNewCatInput("");}if(e.key==="Escape")setNewCatInput(""); }}
+                placeholder="+ yeni kategori"
+                style={{ fontSize:"0.72rem",padding:"5px 12px",borderRadius:99,background:"#1e293b",border:"1px dashed #334155",color:"#94a3b8",outline:"none",width:130 }}/>
+            </div>
+            {selectedCategory&&(
+              <div>
+                <div style={{ fontSize:"0.68rem",letterSpacing:"0.15em",color:"#475569",textTransform:"uppercase",marginBottom:"0.5rem",paddingLeft:"0.2rem" }}>{selectedCategory}</div>
+                <div style={{ display:"flex",flexDirection:"column",gap:"0.6rem" }}>
+                  {tasks.filter(t=>t.category===selectedCategory).length===0?(
+                    <div style={{ textAlign:"center",color:"#475569",fontSize:"0.85rem",padding:"2rem 0" }}>Bu kategoride görev yok</div>
+                  ):(
+                    tasks.filter(t=>t.category===selectedCategory)
+                      .sort((a,b)=>({yuksek:0,orta:1,dusuk:2}[a.priority]??1)-({yuksek:0,orta:1,dusuk:2}[b.priority]??1))
+                      .map(task=>{
+                        const st=statusConfig[task.status];
+                        const isOverdue=task.overdue&&task.status!=="tamamlandi";
+                        return (
+                          <div key={task.id} style={{ background:cardColor,border:"1px solid "+(isOverdue?"#ef444433":"#1e293b"),borderRadius:14,padding:"1rem 1.2rem",opacity:task.status==="tamamlandi"?0.6:1 }}>
+                            <div style={{ display:"flex",alignItems:"center",gap:"0.75rem" }}>
+                              <CheckCircle status={task.status} onClick={()=>cycleStatus(task.id)}/>
+                              <div style={{ flex:1,minWidth:0 }}>
+                                <div style={{ fontSize:"0.92rem",fontWeight:"bold",color:isOverdue?"#fca5a5":"#f1f5f9",textDecoration:task.status==="tamamlandi"?"line-through":"none" }}>{task.emoji+" "+task.title}</div>
+                                {task.detail&&<div style={{ fontSize:"0.75rem",color:"#64748b",marginTop:"0.2rem" }}>{task.detail}</div>}
+                              </div>
+                              <div style={{ display:"flex",gap:"0.3rem",flexShrink:0 }}>
+                                {task.status!=="tamamlandi"&&(
+                                  <button onClick={()=>handleOtele(task)} title="Ertele" style={{ background:"transparent",border:"none",color:"#475569",cursor:"pointer",fontSize:"0.72rem",padding:"0 3px" }}
+                                    onMouseEnter={e=>e.target.style.color="#818cf8"} onMouseLeave={e=>e.target.style.color="#475569"}>⏭</button>
+                                )}
+                                <button onClick={()=>closeTask(task.id)} title="Kapat" style={{ background:"transparent",border:"none",color:"#334155",cursor:"pointer",fontSize:"0.8rem",padding:"0 2px" }}
+                                  onMouseEnter={e=>e.target.style.color="#f59e0b"} onMouseLeave={e=>e.target.style.color="#334155"}>✕</button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })
+                  )}
+                </div>
+              </div>
+            )}
+            {!selectedCategory&&(
+              <div style={{ textAlign:"center",color:"#475569",fontSize:"0.82rem",padding:"2rem 0" }}>Görevleri görmek için bir kategoriye tıkla</div>
+            )}
+          </div>
+        )}
 
         {/* Kapatılan */}
         {view==="kapatilan"&&(
