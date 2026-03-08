@@ -622,7 +622,10 @@ function Yapilacaklar() {
         const storedCats = Array.isArray(stored)?[]:(stored.customCategories||[]);
         const storedClosed = Array.isArray(stored)?[]:(stored.closedTasks||[]);
         const today = localDateStr();
-        const processed = storedTasks.map(t=>processTaskOnDayChange(t,today));
+        const processed = storedTasks.map(t=>processTaskOnDayChange({
+          completedDates:[],...t,
+          completedDates: Array.isArray(t.completedDates)?t.completedDates:[]
+        },today));
         if (processed.length>0) setTasks(processed);
         if (storedCats.length>0) setCustomCategories(storedCats);
         if (storedClosed.length>0) setClosedTasks(storedClosed);
@@ -657,7 +660,8 @@ function Yapilacaklar() {
           const today = localDateStr();
           try {
             const t = (val.tasks||[]).map(t=>processTaskOnDayChange({
-              subtasks:[],recurrenceDays:[],overdue:false,postponedUntil:null,note:"",...t
+              subtasks:[],recurrenceDays:[],overdue:false,postponedUntil:null,note:"",completedDates:[],...t,
+              completedDates: Array.isArray(t.completedDates) ? t.completedDates : []
             },today));
             setTasks(t);
             setCustomCategories(val.customCategories||[]);
