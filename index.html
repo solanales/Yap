@@ -98,7 +98,7 @@ function resetTask(task, today) {
     lastResetDate: today,
     overdue: false,
     postponedUntil: null,
-    title: updateTitlePrefix(task.title, prefix),
+    title: task.recurrence !== "tek-seferlik" ? updateTitlePrefix(task.title, prefix) : task.title,
   };
 }
 
@@ -423,6 +423,7 @@ function CategoryEditor({ task, allCategories, onSelect, onAddCategory, onClose 
 
 // Takvimde o güne özel tarih prefix'i ile başlık göster
 function titleForDate(task, ds) {
+  if (task.recurrence === "tek-seferlik") return task.title;
   const raw = /^\d{6} /.test(task.title) ? task.title.slice(7) : task.title;
   return datePrefix(ds) + " " + raw;
 }
@@ -794,7 +795,8 @@ function Yapilacaklar() {
   const [addingTask,setAddingTask] = useState(false);
   const [editingTitle,setEditingTitle] = useState(null);
   const [titleInput,setTitleInput] = useState("");
-  const [newTask,setNewTask] = useState({title:"",detail:"",category:"Kişisel",emoji:"📌",priority:"orta",time:"bugun"});
+  const [newTask,setNewTask] = useState({title:"",detail:"",category:"Kişisel",emoji:"📌",priority:"orta",time:"bugun",recurrence:"tek-seferlik",recurrenceDays:[]});
+  const [showNewTaskRecurrence,setShowNewTaskRecurrence] = useState(false);
   const [newCatInput,setNewCatInput] = useState("");
   const [selectedCategory,setSelectedCategory] = useState(null);
   const [calendarDetailTask,setCalendarDetailTask] = useState(null);
@@ -995,25 +997,24 @@ function Yapilacaklar() {
     // Zaten ertelenmiş → iptal et, orijinal tarihe dön
     if (task.postponedUntil) {
       s.reset();
-      const orig = task.originalTime || today;
-      const origTitle = task.originalTitle || task.title;
-      updateTask(task.id, {postponedUntil:null, time:orig, title:origTitle, originalTime:null, originalTitle:null});
+      if (task.recurrence === "tek-seferlik") {
+        const orig = task.originalTime || today;
+        updateTask(task.id, {postponedUntil:null, time:orig, originalTime:null, originalTitle:null});
+      } else {
+        updateTask(task.id, {postponedUntil:null, originalTitle:null});
+      }
       return;
     }
     s.otele();
     if (task.recurrence==="gunluk") { closeTask(task.id); return; }
     if (task.recurrence==="tek-seferlik") {
-      updateTask(task.id,{postponedUntil:tomorrow,overdue:false,time:tomorrow,
-        originalTime:task.time, originalTitle:task.title,
-        title:updateTitlePrefix(task.title,datePrefix(tomorrow))});
+      updateTask(task.id,{postponedUntil:tomorrow,overdue:false,time:tomorrow,originalTime:task.time});
       return;
     }
     if (task.recurrence==="haftalik"||task.recurrence==="aylik") {
       const next=getNextScheduledDate(task,today);
       if(!next||next===tomorrow) { closeTask(task.id); }
-      else { updateTask(task.id,{postponedUntil:tomorrow,overdue:false,
-        originalTitle:task.title,
-        title:updateTitlePrefix(task.title,datePrefix(tomorrow))}); }
+      else { updateTask(task.id,{postponedUntil:tomorrow,overdue:false}); }
     }
   };
 
@@ -1067,8 +1068,9 @@ function Yapilacaklar() {
   const saveNote = (id) => { setTasks(prev=>prev.map(t=>t.id===id?{...t,note:noteInput}:t)); setEditingNote(null); };
   const updateTask = (taskId,changes) => setTasks(prev=>prev.map(t=>{
     if(t.id!==taskId) return t;
-    // time değiştiğinde postponedUntil'i temizle
-    if("time" in changes && t.postponedUntil) changes = {...changes, postponedUntil:null, overdue:false};
+    // time değiştiğinde ve biz zaten postponedUntil set etmiyorsak temizle
+    if("time" in changes && !("postponedUntil" in changes) && t.postponedUntil)
+      changes = {...changes, postponedUntil:null, overdue:false};
     return {...t,...changes};
   }));
 
@@ -1084,8 +1086,11 @@ function Yapilacaklar() {
     else if(newTask.time==="yarin") initialPrefix=datePrefix(addDays(today,1));
     else if(newTask.time&&newTask.time.match(/^\d{4}/)) initialPrefix=datePrefix(newTask.time);
     else initialPrefix=datePrefix(today);
-    setTasks(prev=>[...prev,{id,category:newTask.category,emoji:newTask.emoji,title:initialPrefix+" "+title,detail:newTask.detail,priority:newTask.priority,time:newTask.time,status:"bekliyor",note:"",recurrence:"tek-seferlik",recurrenceDays:[],subtasks:[],completedDates:[],startedAt:null,lastResetDate:today,overdue:false,postponedUntil:null}]);
-    setNewTask({title:"",detail:"",category:"Kişisel",emoji:"📌",priority:"orta",time:"bugun"});
+    const isRecurring = newTask.recurrence !== "tek-seferlik";
+    const storedTitle = isRecurring ? (initialPrefix+" "+title) : title;
+    setTasks(prev=>[...prev,{id,category:newTask.category,emoji:newTask.emoji,title:storedTitle,detail:newTask.detail,priority:newTask.priority,time:newTask.time,status:"bekliyor",note:"",recurrence:newTask.recurrence,recurrenceDays:newTask.recurrenceDays,subtasks:[],completedDates:[],startedAt:null,lastResetDate:today,overdue:false,postponedUntil:null}]);
+    setNewTask({title:"",detail:"",category:"Kişisel",emoji:"📌",priority:"orta",time:"bugun",recurrence:"tek-seferlik",recurrenceDays:[]});
+    setShowNewTaskRecurrence(false);
     setAddingTask(false);
   };
 
@@ -1583,10 +1588,30 @@ function Yapilacaklar() {
                     {["bugun","yarin"].map(t=>(
                       <button key={t} onClick={()=>setNewTask(n=>({...n,time:t}))} style={{ fontSize:"0.68rem",padding:"2px 10px",borderRadius:99,border:"none",cursor:"pointer",background:newTask.time===t?"#818cf8":"#1e293b",color:newTask.time===t?"#0d0d14":"#94a3b8",fontWeight:newTask.time===t?"bold":"normal" }}>{t==="bugun"?"Bugün":"Yarın"}</button>
                     ))}
+                    <input type="date" value={newTask.time&&newTask.time.match(/^\d{4}/)?newTask.time:""} onChange={e=>{ const v=e.target.value; if(!v)return; const today=localDateStr(); const tom=addDays(today,1); setNewTask(n=>({...n,time:v===today?"bugun":v===tom?"yarin":v})); }} style={{ background:"#1e293b",border:"1px solid #334155",borderRadius:6,padding:"2px 6px",color:"#e2e8f0",fontSize:"0.68rem",outline:"none",cursor:"pointer" }}/>
                   </div>
+                  <div style={{ display:"flex",gap:"0.4rem",flexWrap:"wrap",alignItems:"center" }}>
+                    <span style={{ fontSize:"0.7rem",color:"#64748b" }}>Tekrarlama:</span>
+                    {[{v:"tek-seferlik",l:"Tek"},{v:"gunluk",l:"Günlük"},{v:"haftalik",l:"Haftalık"},{v:"aylik",l:"Aylık"}].map(opt=>(
+                      <button key={opt.v} onClick={()=>{setNewTask(n=>({...n,recurrence:opt.v,recurrenceDays:[]}));setShowNewTaskRecurrence(opt.v==="haftalik"||opt.v==="aylik");}} style={{ fontSize:"0.68rem",padding:"2px 10px",borderRadius:99,border:"none",cursor:"pointer",background:newTask.recurrence===opt.v?"#818cf8":"#1e293b",color:newTask.recurrence===opt.v?"#0d0d14":"#94a3b8",fontWeight:newTask.recurrence===opt.v?"bold":"normal" }}>{opt.l}</button>
+                    ))}
+                  </div>
+                  {showNewTaskRecurrence&&(newTask.recurrence==="haftalik"||newTask.recurrence==="aylik")&&(
+                    <div style={{ background:"#0f172a",borderRadius:8,padding:"0.5rem 0.7rem",display:"flex",gap:"0.3rem",flexWrap:"wrap" }}>
+                      {newTask.recurrence==="haftalik"&&["Pzt","Sal","Çar","Per","Cum","Cmt","Paz"].map((d,i)=>{
+                        const key=["Pazartesi","Salı","Çarşamba","Perşembe","Cuma","Cumartesi","Pazar"][i];
+                        const sel=(newTask.recurrenceDays||[]).includes(key);
+                        return <button key={key} onClick={()=>setNewTask(n=>({...n,recurrenceDays:sel?n.recurrenceDays.filter(x=>x!==key):[...(n.recurrenceDays||[]),key]}))} style={{ fontSize:"0.65rem",padding:"2px 9px",borderRadius:99,border:"none",cursor:"pointer",background:sel?"#818cf8":"#1e293b",color:sel?"#0d0d14":"#94a3b8" }}>{d}</button>;
+                      })}
+                      {newTask.recurrence==="aylik"&&Array.from({length:31},(_,i)=>i+1).map(d=>{
+                        const sel=(newTask.recurrenceDays||[]).map(Number).includes(d);
+                        return <button key={d} onClick={()=>setNewTask(n=>({...n,recurrenceDays:sel?n.recurrenceDays.filter(x=>Number(x)!==d):[...(n.recurrenceDays||[]),String(d)]}))} style={{ fontSize:"0.62rem",padding:"1px 6px",borderRadius:4,border:"none",cursor:"pointer",background:sel?"#818cf8":"#1e293b",color:sel?"#0d0d14":"#94a3b8",minWidth:22 }}>{d}</button>;
+                      })}
+                    </div>
+                  )}
                   <div style={{ display:"flex",gap:"0.4rem",marginTop:"0.25rem" }}>
                     <button onClick={addTask} style={{ background:"#22c55e",border:"none",borderRadius:6,padding:"6px 14px",color:"#0d0d14",cursor:"pointer",fontSize:"0.8rem",fontWeight:"bold" }}>Ekle</button>
-                    <button onClick={()=>setAddingTask(false)} style={{ background:"#1e293b",border:"none",borderRadius:6,padding:"6px 12px",color:"#94a3b8",cursor:"pointer",fontSize:"0.8rem" }}>İptal</button>
+                    <button onClick={()=>{setAddingTask(false);setShowNewTaskRecurrence(false);}} style={{ background:"#1e293b",border:"none",borderRadius:6,padding:"6px 12px",color:"#94a3b8",cursor:"pointer",fontSize:"0.8rem" }}>İptal</button>
                   </div>
                 </div>
               </div>
