@@ -293,12 +293,14 @@ function useSound() {
 }
 
 // ── UI bileşenleri ─────────────────────────────────────────────────
-function CheckCircle({ status, onClick }) {
+function CheckCircle({ status, onClick, isCompleted }) {
   const cfg = statusConfig[status];
+  const done = isCompleted !== undefined ? isCompleted : status==="tamamlandi";
+  const borderColor = done ? "#22c55e" : (status==="bekliyor"?"#334155":cfg.color);
   return (
-    <button onClick={onClick} style={{ width:22,height:22,borderRadius:"50%",border:"2px solid "+(status==="bekliyor"?"#334155":cfg.color),background:status==="tamamlandi"?cfg.color:"transparent",cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s",padding:0 }}>
-      {status==="tamamlandi"&&<svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#0d0d14" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
-      {status==="devamediyor"&&<div style={{ width:8,height:8,borderRadius:"50%",background:cfg.color }}/>}
+    <button onClick={onClick} style={{ width:22,height:22,borderRadius:"50%",border:"2px solid "+borderColor,background:done?"#22c55e":"transparent",cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s",padding:0 }}>
+      {done&&<svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#0d0d14" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+      {!done&&status==="devamediyor"&&<div style={{ width:8,height:8,borderRadius:"50%",background:cfg.color }}/>}
     </button>
   );
 }
@@ -349,6 +351,8 @@ function TimeEditor({ value, onChange, onClose }) {
 function RecurrenceEditor({ task, onChange, onClose }) {
   const [localDays, setLocalDays] = useState(normalizeDays(task.recurrenceDays));
   const [localRec, setLocalRec] = useState(task.recurrence||"tek-seferlik");
+  useEffect(()=>{ setLocalRec(task.recurrence||"tek-seferlik"); },[task.recurrence]);
+  useEffect(()=>{ setLocalDays(normalizeDays(task.recurrenceDays)); },[task.id]);
 
   const toggleDay = (day) => {
     const newDays = localDays.includes(day) ? localDays.filter(d=>d!==day) : [...localDays, day];
@@ -492,9 +496,11 @@ function CalendarGrid({ days, tasks, todayStr, selectedDay, onSelect, minHeight=
             style={{ minHeight,background:isSel?"#1e1e3a":isToday?"#1a1a2e":inMonth?"var(--card-color)":"transparent",border:"1px solid "+(isSel?"#818cf8":isToday?"#818cf855":"#1e293b"),borderRadius:7,padding:"0.3rem",opacity:inMonth?1:0.3,cursor:"pointer" }}>
             <div style={{ fontSize:"0.68rem",color:isSel||isToday?"#818cf8":"#64748b",textAlign:"center",fontWeight:(isToday||isSel)?"bold":"normal",marginBottom:"0.2rem" }}>{day.getDate()}</div>
             <div style={{ display:"flex",flexWrap:"wrap",gap:3,justifyContent:"center" }}>
-              {dt.slice(0,4).map(t=>(
-                <div key={t.id} style={{ width:6,height:6,borderRadius:"50%",background:t.overdue?"#ef4444":(dotColor[t.status]||"#94a3b8") }} title={t.title}/>
-              ))}
+              {dt.slice(0,4).map(t=>{
+                const completedOnDay=(t.completedDates||[]).includes(ds);
+                const dotStatus=t.recurrence!=="tek-seferlik"?(completedOnDay?"tamamlandi":"bekliyor"):t.status;
+                return <div key={t.id} style={{ width:6,height:6,borderRadius:"50%",background:t.overdue&&dotStatus!=="tamamlandi"?"#ef4444":(dotColor[dotStatus]||"#94a3b8") }} title={t.title}/>;
+              })}
               {dt.length>4&&<div style={{ fontSize:"0.48rem",color:"#475569" }}>+{dt.length-4}</div>}
             </div>
           </div>
@@ -743,8 +749,15 @@ function Yapilacaklar() {
   const allCategories = [...new Set([...customCategories,...tasks.map(t=>t.category)])];
 
   const cycleStatus = (id) => {
+    const today = localDateStr();
     setTasks(prev=>prev.map(t=>{
       if(t.id!==id)return t;
+      if(t.recurrence!=="tek-seferlik"){
+        const dates = t.completedDates||[];
+        const isCompletedToday = dates.includes(today);
+        if(isCompletedToday){ s.reset(); return{...t,completedDates:dates.filter(d=>d!==today)}; }
+        else{ s.complete(); return{...t,completedDates:[...dates,today],overdue:false}; }
+      }
       const order=["bekliyor","devamediyor","tamamlandi"];
       const next=order[(order.indexOf(t.status)+1)%order.length];
       if(next==="tamamlandi"){s.complete();return{...t,status:next,overdue:false,postponedUntil:null};}
@@ -1148,11 +1161,14 @@ function Yapilacaklar() {
                     const elapsed=formatElapsed(task.startedAt);
                     const isOverdue=task.overdue&&task.status!=="tamamlandi";
                     const isPostponed=task.postponedUntil&&task.postponedUntil>localDateStr();
+                    const todayStr2=localDateStr();
+                    const isCompletedToday=task.recurrence!=="tek-seferlik"?(task.completedDates||[]).includes(todayStr2):undefined;
+                    const isDone=isCompletedToday!==undefined?isCompletedToday:task.status==="tamamlandi";
                     return (
-                      <div key={task.id} style={{ background:cardColor,border:"1px solid "+(isOverdue?"#ef444433":"#1e293b"),borderRadius:14,padding:"1.1rem 1.2rem",opacity:task.status==="tamamlandi"?0.6:1,transition:"opacity 0.3s" }}>
+                      <div key={task.id} style={{ background:cardColor,border:"1px solid "+(isOverdue?"#ef444433":"#1e293b"),borderRadius:14,padding:"1.1rem 1.2rem",opacity:isDone?0.6:1,transition:"opacity 0.3s" }}>
                         <div style={{ display:"flex",alignItems:"flex-start",gap:"0.75rem" }}>
                           <div style={{ paddingTop:2 }}>
-                            <CheckCircle status={task.status} onClick={()=>cycleStatus(task.id)}/>
+                            <CheckCircle status={task.status} onClick={()=>cycleStatus(task.id)} isCompleted={isCompletedToday}/>
                           </div>
                           <div style={{ flex:1,minWidth:0 }}>
                             {editingTitle===task.id?(
