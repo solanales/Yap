@@ -623,7 +623,7 @@ function Yapilacaklar() {
         const storedClosed = Array.isArray(stored)?[]:(stored.closedTasks||[]);
         const today = localDateStr();
         const processed = storedTasks.map(t=>processTaskOnDayChange({
-          completedDates:[],...t,
+          ...t,
           completedDates: Array.isArray(t.completedDates)?t.completedDates:[]
         },today));
         if (processed.length>0) setTasks(processed);
@@ -660,7 +660,7 @@ function Yapilacaklar() {
           const today = localDateStr();
           try {
             const t = (val.tasks||[]).map(t=>processTaskOnDayChange({
-              subtasks:[],recurrenceDays:[],overdue:false,postponedUntil:null,note:"",completedDates:[],...t,
+              subtasks:[],recurrenceDays:[],overdue:false,postponedUntil:null,note:"",...t,
               completedDates: Array.isArray(t.completedDates) ? t.completedDates : []
             },today));
             setTasks(t);
