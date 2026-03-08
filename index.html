@@ -351,8 +351,6 @@ function TimeEditor({ value, onChange, onClose }) {
 function RecurrenceEditor({ task, onChange, onClose }) {
   const [localDays, setLocalDays] = useState(normalizeDays(task.recurrenceDays));
   const [localRec, setLocalRec] = useState(task.recurrence||"tek-seferlik");
-  useEffect(()=>{ setLocalRec(task.recurrence||"tek-seferlik"); },[task.recurrence]);
-  useEffect(()=>{ setLocalDays(normalizeDays(task.recurrenceDays)); },[task.id]);
 
   const toggleDay = (day) => {
     const newDays = localDays.includes(day) ? localDays.filter(d=>d!==day) : [...localDays, day];
@@ -752,14 +750,22 @@ function Yapilacaklar() {
     const today = localDateStr();
     setTasks(prev=>prev.map(t=>{
       if(t.id!==id)return t;
-      if(t.recurrence!=="tek-seferlik"){
-        const dates = t.completedDates||[];
-        const isCompletedToday = dates.includes(today);
-        if(isCompletedToday){ s.reset(); return{...t,completedDates:dates.filter(d=>d!==today)}; }
-        else{ s.complete(); return{...t,completedDates:[...dates,today],overdue:false}; }
-      }
       const order=["bekliyor","devamediyor","tamamlandi"];
       const next=order[(order.indexOf(t.status)+1)%order.length];
+      // Tekrarlayan görevlerde completedDates'i de güncelle
+      if(t.recurrence!=="tek-seferlik"){
+        const dates = t.completedDates||[];
+        if(next==="tamamlandi"){
+          s.complete();
+          return{...t,status:next,overdue:false,postponedUntil:null,completedDates:[...new Set([...dates,today])]};
+        }
+        if(next==="devamediyor"){
+          s.progress();
+          return{...t,status:next,startedAt:!t.startedAt?new Date().toISOString():t.startedAt,completedDates:dates.filter(d=>d!==today)};
+        }
+        s.reset();
+        return{...t,status:next,startedAt:null,completedDates:dates.filter(d=>d!==today)};
+      }
       if(next==="tamamlandi"){s.complete();return{...t,status:next,overdue:false,postponedUntil:null};}
       if(next==="devamediyor"){s.progress();return{...t,status:next,startedAt:!t.startedAt?new Date().toISOString():t.startedAt};}
       s.reset();return{...t,status:next,startedAt:null};
@@ -1161,14 +1167,11 @@ function Yapilacaklar() {
                     const elapsed=formatElapsed(task.startedAt);
                     const isOverdue=task.overdue&&task.status!=="tamamlandi";
                     const isPostponed=task.postponedUntil&&task.postponedUntil>localDateStr();
-                    const todayStr2=localDateStr();
-                    const isCompletedToday=task.recurrence!=="tek-seferlik"?(task.completedDates||[]).includes(todayStr2):undefined;
-                    const isDone=isCompletedToday!==undefined?isCompletedToday:task.status==="tamamlandi";
                     return (
-                      <div key={task.id} style={{ background:cardColor,border:"1px solid "+(isOverdue?"#ef444433":"#1e293b"),borderRadius:14,padding:"1.1rem 1.2rem",opacity:isDone?0.6:1,transition:"opacity 0.3s" }}>
+                      <div key={task.id} style={{ background:cardColor,border:"1px solid "+(isOverdue?"#ef444433":"#1e293b"),borderRadius:14,padding:"1.1rem 1.2rem",opacity:task.status==="tamamlandi"?0.6:1,transition:"opacity 0.3s" }}>
                         <div style={{ display:"flex",alignItems:"flex-start",gap:"0.75rem" }}>
                           <div style={{ paddingTop:2 }}>
-                            <CheckCircle status={task.status} onClick={()=>cycleStatus(task.id)} isCompleted={isCompletedToday}/>
+                            <CheckCircle status={task.status} onClick={()=>cycleStatus(task.id)}/>
                           </div>
                           <div style={{ flex:1,minWidth:0 }}>
                             {editingTitle===task.id?(
