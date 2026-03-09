@@ -814,6 +814,8 @@ function Yapilacaklar() {
   const [titleInput,setTitleInput] = useState("");
   const [newTask,setNewTask] = useState({title:"",detail:"",category:"Kişisel",emoji:"📌",priority:"orta",time:"bugun",recurrence:"tek-seferlik",recurrenceDays:[]});
   const [showNewTaskRecurrence,setShowNewTaskRecurrence] = useState(false);
+  const [showBatchDelete,setShowBatchDelete] = useState(false);
+  const [batchDeleteInput,setBatchDeleteInput] = useState("");
   const [newCatInput,setNewCatInput] = useState("");
   const [selectedCategory,setSelectedCategory] = useState(null);
   const [calendarDetailTask,setCalendarDetailTask] = useState(null);
@@ -1638,8 +1640,56 @@ function Yapilacaklar() {
           </div>
         )}
 
+        {/* Toplu Sil Modal */}
+        {showBatchDelete&&(
+          <div style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center" }}
+            onClick={e=>{ if(e.target===e.currentTarget)setShowBatchDelete(false); }}>
+            <div style={{ background:"#1e293b",border:"1px solid #334155",borderRadius:16,padding:"1.5rem",width:"90%",maxWidth:360 }}>
+              <div style={{ fontSize:"0.85rem",fontWeight:"bold",color:"#f1f5f9",marginBottom:"0.75rem" }}>🗑 Toplu Görev Sil</div>
+              <div style={{ fontSize:"0.75rem",color:"#64748b",marginBottom:"0.75rem" }}>Silinecek görevlerin başlığında geçen ifadeyi yaz. İçinde bu ifade geçen tüm görevler silinir.</div>
+              <input autoFocus value={batchDeleteInput} onChange={e=>setBatchDeleteInput(e.target.value)}
+                onKeyDown={e=>{if(e.key==="Escape")setShowBatchDelete(false);}}
+                placeholder="ör: Deneme 1"
+                style={{ width:"100%",boxSizing:"border-box",background:"#0f172a",border:"1px solid #334155",borderRadius:8,padding:"8px 12px",color:"#e2e8f0",fontSize:"0.85rem",outline:"none",marginBottom:"0.75rem" }}/>
+              {batchDeleteInput.trim()&&(()=>{
+                const term=batchDeleteInput.trim().toLowerCase();
+                const raw=/^\d{6} /.test(term)?term:term;
+                const matched=tasks.filter(t=>{
+                  const titleLower=t.title.toLowerCase();
+                  const rawTitle=(/^\d{6} /.test(t.title)?t.title.slice(7):t.title).toLowerCase();
+                  return titleLower.includes(raw)||rawTitle.includes(raw);
+                });
+                return <div style={{ fontSize:"0.72rem",color:matched.length>0?"#f59e0b":"#64748b",marginBottom:"0.75rem" }}>
+                  {matched.length>0?matched.length+" görev bulundu ve silinecek":"Eşleşen görev yok"}
+                </div>;
+              })()}
+              <div style={{ display:"flex",gap:"0.5rem" }}>
+                <button onClick={()=>{
+                  const term=batchDeleteInput.trim().toLowerCase();
+                  if(!term)return;
+                  const matched=tasks.filter(t=>{
+                    const rawTitle=(/^\d{6} /.test(t.title)?t.title.slice(7):t.title).toLowerCase();
+                    return t.title.toLowerCase().includes(term)||rawTitle.includes(term);
+                  });
+                  if(matched.length===0){alert("Eşleşen görev bulunamadı.");return;}
+                  if(window.confirm(matched.length+" görev silinecek. Emin misin?")){
+                    const ids=new Set(matched.map(t=>t.id));
+                    setTasks(prev=>prev.filter(t=>!ids.has(t.id)));
+                    setShowBatchDelete(false);
+                    setBatchDeleteInput("");
+                  }
+                }} style={{ flex:1,background:"#ef4444",border:"none",borderRadius:8,padding:"8px",color:"#fff",cursor:"pointer",fontSize:"0.8rem",fontWeight:"bold" }}>Sil</button>
+                <button onClick={()=>setShowBatchDelete(false)} style={{ flex:1,background:"#0f172a",border:"none",borderRadius:8,padding:"8px",color:"#94a3b8",cursor:"pointer",fontSize:"0.8rem" }}>İptal</button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Dışa/İçe Aktar */}
-        <div style={{ marginTop:"1rem",display:"flex",gap:"0.5rem",justifyContent:"center" }}>
+        <div style={{ marginTop:"1rem",display:"flex",gap:"0.5rem",justifyContent:"center",flexWrap:"wrap" }}>
+          <button onClick={()=>{setShowBatchDelete(true);setBatchDeleteInput("");}} style={{ fontSize:"0.75rem",padding:"6px 16px",borderRadius:8,background:"#1e293b",color:"#ef4444",border:"1px solid #ef444433",cursor:"pointer" }}>
+            🗑 Toplu Sil
+          </button>
           <button onClick={()=>{
             const data=JSON.stringify({tasks,customCategories,closedTasks},null,2);
             const blob=new Blob([data],{type:"application/json"});
