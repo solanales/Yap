@@ -98,7 +98,7 @@ function resetTask(task, today) {
     lastResetDate: today,
     overdue: false,
     postponedUntil: null,
-    title: task.recurrence !== "tek-seferlik" ? updateTitlePrefix(task.title, prefix) : task.title,
+    title: task.title,
   };
 }
 
@@ -423,9 +423,7 @@ function CategoryEditor({ task, allCategories, onSelect, onAddCategory, onClose 
 
 // Takvimde o güne özel tarih prefix'i ile başlık göster
 function titleForDate(task, ds) {
-  if (task.recurrence === "tek-seferlik") return task.title;
-  const raw = /^\d{6} /.test(task.title) ? task.title.slice(7) : task.title;
-  return datePrefix(ds) + " " + raw;
+  return task.title;
 }
 
 
@@ -997,12 +995,8 @@ function Yapilacaklar() {
     // Zaten ertelenmiş → iptal et, orijinal tarihe dön
     if (task.postponedUntil) {
       s.reset();
-      if (task.recurrence === "tek-seferlik") {
-        const orig = task.originalTime || today;
-        updateTask(task.id, {postponedUntil:null, time:orig, originalTime:null, originalTitle:null});
-      } else {
-        updateTask(task.id, {postponedUntil:null, originalTitle:null});
-      }
+      const orig = task.originalTime || today;
+      updateTask(task.id, {postponedUntil:null, time:orig, originalTime:null});
       return;
     }
     s.otele();
@@ -1012,9 +1006,7 @@ function Yapilacaklar() {
       return;
     }
     if (task.recurrence==="haftalik"||task.recurrence==="aylik") {
-      const next=getNextScheduledDate(task,today);
-      if(!next||next===tomorrow) { closeTask(task.id); }
-      else { updateTask(task.id,{postponedUntil:tomorrow,overdue:false}); }
+      updateTask(task.id,{postponedUntil:tomorrow,overdue:false,originalTime:task.time,time:tomorrow});
     }
   };
 
@@ -1086,9 +1078,7 @@ function Yapilacaklar() {
     else if(newTask.time==="yarin") initialPrefix=datePrefix(addDays(today,1));
     else if(newTask.time&&newTask.time.match(/^\d{4}/)) initialPrefix=datePrefix(newTask.time);
     else initialPrefix=datePrefix(today);
-    const isRecurring = newTask.recurrence !== "tek-seferlik";
-    const storedTitle = isRecurring ? (initialPrefix+" "+title) : title;
-    setTasks(prev=>[...prev,{id,category:newTask.category,emoji:newTask.emoji,title:storedTitle,detail:newTask.detail,priority:newTask.priority,time:newTask.time,status:"bekliyor",note:"",recurrence:newTask.recurrence,recurrenceDays:newTask.recurrenceDays,subtasks:[],completedDates:[],startedAt:null,lastResetDate:today,overdue:false,postponedUntil:null}]);
+    setTasks(prev=>[...prev,{id,category:newTask.category,emoji:newTask.emoji,title:initialPrefix+" "+title,detail:newTask.detail,priority:newTask.priority,time:newTask.time,status:"bekliyor",note:"",recurrence:newTask.recurrence,recurrenceDays:newTask.recurrenceDays,subtasks:[],completedDates:[],startedAt:null,lastResetDate:today,overdue:false,postponedUntil:null}]);
     setNewTask({title:"",detail:"",category:"Kişisel",emoji:"📌",priority:"orta",time:"bugun",recurrence:"tek-seferlik",recurrenceDays:[]});
     setShowNewTaskRecurrence(false);
     setAddingTask(false);
@@ -1096,24 +1086,11 @@ function Yapilacaklar() {
 
   const saveTitle = (id) => { setTasks(prev=>prev.map(t=>t.id===id?{...t,title:titleInput.trim()||t.title}:t)); setEditingTitle(null); };
 
-  // Tekrarlama değişince tek task güncelle, ilk planlı tarihin prefix'ini ata
+  // Tekrarlama değişince sadece recurrence alanlarını güncelle, title değişmez
   const handleRecurrenceChange = (taskId, changes) => {
-    const today = localDateStr();
     setTasks(prev=>prev.map(t=>{
       if(t.id!==taskId)return t;
-      const updated={...t,...changes};
-      const days=normalizeDays(updated.recurrenceDays);
-      const rawTitle=/^\d{6} /.test(updated.title)?updated.title.slice(7):updated.title;
-      if(updated.recurrence==="haftalik"&&days.length>0){
-        const first=getFirstScheduledDateOnOrAfter(updated,today);
-        if(first)updated.title=datePrefix(first)+" "+rawTitle;
-      } else if(updated.recurrence==="aylik"&&days.length>0){
-        const first=getFirstScheduledDateOnOrAfter(updated,today);
-        if(first)updated.title=datePrefix(first)+" "+rawTitle;
-      } else if(updated.recurrence==="gunluk"){
-        updated.title=datePrefix(today)+" "+rawTitle;
-      }
-      return updated;
+      return {...t,...changes};
     }));
   };
 
