@@ -1007,7 +1007,6 @@ function Yapilacaklar() {
 
   const handleOtele = (task) => {
     const today = localDateStr();
-    const tomorrow = addDays(today,1);
     // Zaten ertelenmiş → iptal et, orijinal tarihe dön
     if (task.postponedUntil) {
       s.reset();
@@ -1016,21 +1015,24 @@ function Yapilacaklar() {
       return;
     }
     s.otele();
-    // Seri görevi: yarın sibling var mı kontrol et
+    // Görevin bulunduğu tarihi baz al (bugünü değil)
+    const taskDate = task.time && task.time.match(/^\d{4}/) ? task.time : today;
+    const nextDay = addDays(taskDate, 1);
+    // Seri görevi: bir sonraki günde sibling var mı kontrol et
     if (task.seriesId) {
-      const hasSiblingTomorrow = tasks.some(s =>
+      const hasSiblingNext = tasks.some(s =>
         s.id !== task.id && s.seriesId === task.seriesId &&
-        (s.time === tomorrow || s.postponedUntil === tomorrow)
+        (s.time === nextDay || s.postponedUntil === nextDay)
       );
-      if (hasSiblingTomorrow) {
+      if (hasSiblingNext) {
         closeTask(task.id); // sibling var → sil
       } else {
-        updateTask(task.id, {postponedUntil:tomorrow, overdue:false, time:tomorrow, originalTime:task.postponedUntil||task.time});
+        updateTask(task.id, {postponedUntil:nextDay, overdue:false, time:nextDay, originalTime:task.time});
       }
       return;
     }
     // Tek-seferlik
-    updateTask(task.id,{postponedUntil:tomorrow,overdue:false,time:tomorrow,originalTime:task.time});
+    updateTask(task.id,{postponedUntil:nextDay,overdue:false,time:nextDay,originalTime:task.time});
   };
 
   const toggleDateComplete = (task, ds) => {
