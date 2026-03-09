@@ -230,27 +230,49 @@ function processTaskOnDayChange(t, today) {
 
   const scheduledDays = normalizeDays(task.recurrenceDays);
 
-  if (task.recurrence === "gunluk") return resetTask(task, today);
+  const tomorrow = addDays(today, 1);
+
+  if (task.recurrence === "gunluk") {
+    if (task.status !== "tamamlandi") {
+      // Yarın zaten görünecek → sıfırla; completedDates temizle
+      return resetTask({...task, completedDates:[]}, today);
+    }
+    return resetTask(task, today);
+  }
 
   if (task.recurrence === "haftalik") {
-    if (scheduledDays.includes(todayWD)) return resetTask(task, today);
-    if (task.status !== "tamamlandi" && !task.postponedUntil) {
-      const lastDate = new Date(task.lastResetDate+"T00:00:00");
-      const lastWD = WEEKDAYS[lastDate.getDay()===0?6:lastDate.getDay()-1];
-      if (task.overdue || scheduledDays.includes(lastWD)) {
-        return { ...task, overdue: true, lastResetDate: today };
+    const showsToday = scheduledDays.includes(todayWD);
+    const tomorrowDate = new Date(tomorrow+"T00:00:00");
+    const tomorrowWD = WEEKDAYS[tomorrowDate.getDay()===0?6:tomorrowDate.getDay()-1];
+    const showsTomorrow = scheduledDays.includes(tomorrowWD);
+    if (showsToday) {
+      if (task.status !== "tamamlandi") {
+        if (showsTomorrow) {
+          // Yarın zaten görünecek → sıfırla
+          return resetTask({...task, completedDates:[]}, today);
+        } else {
+          // Yarın görünmeyecek → ertele
+          return { ...task, postponedUntil: tomorrow, overdue: false, originalTime: task.time || today, lastResetDate: today };
+        }
       }
+      return resetTask(task, today);
     }
     return { ...task, lastResetDate: today };
   }
 
   if (task.recurrence === "aylik") {
-    if (scheduledDays.map(Number).includes(todayDate.getDate())) return resetTask(task, today);
-    if (task.status !== "tamamlandi" && !task.postponedUntil) {
-      const lastDate = new Date(task.lastResetDate+"T00:00:00");
-      if (task.overdue || scheduledDays.map(Number).includes(lastDate.getDate())) {
-        return { ...task, overdue: true, lastResetDate: today };
+    const showsToday = scheduledDays.map(Number).includes(todayDate.getDate());
+    const tomorrowDate = new Date(tomorrow+"T00:00:00");
+    const showsTomorrow = scheduledDays.map(Number).includes(tomorrowDate.getDate());
+    if (showsToday) {
+      if (task.status !== "tamamlandi") {
+        if (showsTomorrow) {
+          return resetTask({...task, completedDates:[]}, today);
+        } else {
+          return { ...task, postponedUntil: tomorrow, overdue: false, originalTime: task.time || today, lastResetDate: today };
+        }
       }
+      return resetTask(task, today);
     }
     return { ...task, lastResetDate: today };
   }
@@ -423,7 +445,10 @@ function CategoryEditor({ task, allCategories, onSelect, onAddCategory, onClose 
 
 // Takvimde o güne özel tarih prefix'i ile başlık göster
 function titleForDate(task, ds) {
-  return task.title;
+  if (task.recurrence === "tek-seferlik") return task.title;
+  // Tekrarlayan görevlerde takvimde o günün prefixini göster
+  const raw = /^\d{6} /.test(task.title) ? task.title.slice(7) : task.title;
+  return datePrefix(ds) + " " + raw;
 }
 
 
